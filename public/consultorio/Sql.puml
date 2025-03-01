@@ -1,0 +1,129 @@
+@startuml
+'!define primary_key #FFAAAA
+'!define foreign_key #FFFFAA
+
+entity Terapeutas {
+  **id_terapeuta** : serial [primary_key]
+  --
+  nombre: varchar(50)
+  apellido: varchar(50)
+  correo: varchar(100) [unique]
+  contraseña: varchar(255)
+  especialidad: varchar(100)
+  horario_disponible: ts_range
+  foto_url: varchar(255)
+  estado: estado_usuario
+  creado_en: timestampz
+  actualizado_en: timestampz
+}
+
+entity Pacientes {
+  **id_paciente** : serial [primary_key]
+  --
+  nombre: varchar(50)
+  apellido: varchar(50)
+  correo: varchar(100) [unique]
+  contraseña: varchar(255)
+  fecha_nacimiento: date
+  direccion: varchar(255)
+  cedula: varchar(20) [unique]
+  tipo_atencion: varchar(50)
+  foto_url: varchar(255)
+  estado: varchar(20)
+  creado_en: timestampz
+  actualizado_en: timestampz
+}
+
+entity Citas {
+  **id_cita** : serial [primary_key]
+  --
+  paciente_id: integer [foreign_key]
+  terapeuta_id: integer [foreign_key]
+  fecha_hora: timestampz
+  duracion: interval
+  estado: estado_cita_type
+  motivo_cancelacion: text
+  creado_en: timestampz
+  actualizado_en: timestampz
+}
+
+entity ListaEspera {
+  **id_lista** : serial [primary_key]
+  --
+  paciente_id: integer [foreign_key]
+  terapeuta_id: integer [foreign_key]
+  fecha_solicitud: timestampz
+  prioridad: prioridad_type
+  estado: estado_lista_type
+  observaciones: text
+  creado_en: timestampz
+  actualizado_en: timestampz
+}
+
+entity Notificaciones {
+  **id_notificacion** : serial [primary_key]
+  --
+  paciente_id: integer [foreign_key]
+  terapeuta_id: integer [foreign_key]
+  tipo: tipo_notificacion
+  mensaje: text
+  leida: boolean
+  programada_para: timestampz
+  enviada_en: timestampz
+  creado_en: timestampz
+}
+
+entity Reportes {
+  **id_reporte** : serial [primary_key]
+  --
+  terapeuta_id: integer [foreign_key]
+  tipo: tipo_reporte
+  parametros: jsonb
+  generado_en: timestampz
+  almacenado_en: varchar(255)
+}
+
+entity HistorialEstados {
+  **id_historial** : serial [primary_key]
+  --
+  paciente_id: integer [foreign_key]
+  estado_anterior: varchar(20)
+  estado_nuevo: varchar(20)
+  motivo: text
+  cambiado_por: integer [foreign_key]
+  cambiado_en: timestampz
+}
+
+' Relaciones principales
+Pacientes --{ Citas
+Terapeutas --{ Citas
+
+Pacientes --{ ListaEspera
+Terapeutas --{ ListaEspera
+
+Pacientes --{ Notificaciones
+Terapeutas --{ Notificaciones
+
+Terapeutas --{ Reportes
+
+Pacientes --{ HistorialEstados
+Terapeutas --|{ HistorialEstados
+
+' Notas adicionales
+note top of Citas
+  Restricción EXCLUDE para evitar
+  solapamiento de citas con el mismo terapeuta
+end note
+
+note bottom of Notificaciones
+  CHECK: (paciente_id XOR terapeuta_id)
+  Notificaciones deben tener un destinatario
+end note
+
+note right of HistorialEstados
+  Registra cambios de estado
+  de pacientes realizados
+  por terapeutas
+end note
+
+@enduml
