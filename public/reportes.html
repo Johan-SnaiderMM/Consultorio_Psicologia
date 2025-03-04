@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reportes de Consultas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --color-primario: #2563eb;
+      --color-secundario: #1e40af;
+      --degradado-fondo: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    body {
+      background: var(--degradado-fondo);
+      min-height: 100vh;
+    }
+
+    .reporte-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .ticket {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1);
+      padding: 2.5rem;
+      border: 1px solid rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ticket::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--color-primario);
+    }
+
+    .encabezado {
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .contenido-reporte {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 2rem;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    #contenidoReporte {
+      min-height: 250px;
+      transition: all 0.3s;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1.25rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    #contenidoReporte:focus {
+      border-color: var(--color-primario);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+
+    .badge-estado {
+      font-size: 0.9rem;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      background: var(--color-primario);
+    }
+
+    .datos-consulta {
+      background: rgba(13, 110, 253, 0.05);
+      border-radius: 10px;
+      padding: 1.5rem;
+      border: 1px solid rgba(13, 110, 253, 0.1);
+    }
+
+    .texto-sutil {
+      color: #6c757d;
+      font-size: 0.85em;
+      letter-spacing: 0.3px;
+    }
+
+    .campo-duracion {
+      max-width: 200px;
+    }
+
+    .texto-negro {
+      color: #000000 !important;
+    }
+
+    .espaciado-lineas {
+      line-height: 1.8;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .select-cita {
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      transition: all 0.3s;
+    }
+
+    .select-cita:focus {
+      border-color: var(--color-primario);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+
+    .btn-guardar {
+      background: var(--color-primario);
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+
+    .btn-guardar:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <i class="bi bi-heart-pulse me-2"></i>
+        <span>Consultorio Psicológico</span>
+      </a>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="Lista_de_espera.html">Lista de Espera</a></li>
+          <li class="nav-item"><a class="nav-link active" href="reportes.html">Reportes</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container reporte-container">
+    <div class="mb-4 text-center">
+      <h1 class="text-primary mb-4 fw-bold">📄 Generar Reporte de Consulta</h1>
+      <div class="row g-3 justify-content-center">
+        <div class="col-md-9">
+          <select id="selectCita" class="form-select select-cita" onchange="cargarDetallesCita(this.value)">
+            <option value="">Seleccione una cita completada...</option>
+          </select>
+          <div class="texto-sutil mt-2">Solo se muestran citas marcadas como completadas</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ticketReporte" class="ticket" style="display: none;">
+      <div class="encabezado mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="text-primary mb-0">📋 Informe de Consulta</h2>
+          <span class="badge-estado">COMPLETADA</span>
+        </div>
+        <div class="texto-sutil">Detalles profesionales de la sesión terapéutica</div>
+      </div>
+      
+      <div class="contenido-reporte">
+        <div class="mb-4">
+          <h5 class="fw-bold mb-3">📌 Datos de la Consulta</h5>
+          <div class="datos-consulta">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <div class="texto-sutil">Paciente</div>
+                  <div id="pacienteNombre" class="fw-bold text-dark"></div>
+                </div>
+                <div class="mb-3">
+                  <div class="texto-sutil">Terapeuta</div>
+                  <div id="terapeutaNombre" class="fw-bold text-dark"></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <div class="texto-sutil">Fecha y Hora</div>
+                  <div id="fechaConsulta" class="fw-bold text-dark"></div>
+                </div>
+                <div class="mb-3">
+                  <div class="texto-sutil">Duración de la Consulta</div>
+                  <select id="duracionConsulta" class="form-select campo-duracion">
+                    <option value="30 minutos">30 minutos</option>
+                    <option value="45 minutos">45 minutos</option>
+                    <option value="1 hora" selected>1 hora</option>
+                    <option value="1 hora 30 minutos">1 hora 30 minutos</option>
+                    <option value="2 horas">2 horas</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <div class="texto-sutil">Tipo de Atención</div>
+                  <div id="tipoAtencion" class="fw-bold text-dark"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <h5 class="fw-bold mb-3">📝 Observaciones de la Sesión</h5>
+          <textarea id="contenidoReporte" class="form-control" rows="8" 
+                    placeholder="Describa los detalles relevantes de la consulta...\n\nEjemplo:\n• Motivo de consulta\n• Técnicas aplicadas\n• Observaciones conductuales\n• Recomendaciones y próximos pasos"></textarea>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <button class="btn btn-primary btn-guardar" onclick="guardarReporte()">
+            <i class="bi bi-save me-2"></i>Guardar Reporte
+          </button>
+          <button class="btn btn-success btn-guardar" onclick="generarPDF()">
+            <i class="bi bi-file-pdf me-2"></i>Generar PDF
+          </button>
+        </div>
+      </div>
+      
+      <div class="mt-4 texto-sutil text-center">
+        <div class="mb-2">Documento generado electrónicamente</div>
+        <div id="fechaGeneracion"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incluir jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const { jsPDF } = window.jspdf;
+    let citaActual = null;
+
+    async function cargarCitasCompletadas() {
+      try {
+        const response = await fetch('/api/citas-completadas');
+        if (!response.ok) throw new Error('Error al cargar citas');
+        const citas = await response.json();
+        
+        const select = document.getElementById('selectCita');
+        select.innerHTML = citas.length > 0 
+          ? '<option value="">Seleccione una cita completada...</option>' + 
+            citas.map(cita => `
+              <option value="${cita.id_cita}">
+                ${new Date(cita.fecha_hora).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })} - 
+                ${cita.paciente_nombre} ${cita.paciente_apellido}
+                (${cita.tipo_atencion})
+              </option>`).join('')
+          : '<option value="">No hay citas completadas</option>';
+        
+      } catch (error) {
+        mostrarError('Error cargando citas: ' + error.message);
+      }
+    }
+
+    async function cargarDetallesCita(idCita) {
+      if (!idCita) {
+        document.getElementById('ticketReporte').style.display = 'none';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/citas/${idCita}`);
+        if (!response.ok) throw new Error('Cita no encontrada');
+        citaActual = await response.json();
+        
+        // Cargar duración guardada
+        document.getElementById('duracionConsulta').value = citaActual.duracion || '1 hora';
+        
+        actualizarUI();
+        document.getElementById('ticketReporte').style.display = 'block';
+        
+      } catch (error) {
+        mostrarError(error.message);
+      }
+    }
+
+    function actualizarUI() {
+      document.getElementById('pacienteNombre').textContent = 
+        `${citaActual.paciente_nombre} ${citaActual.paciente_apellido}`;
+      document.getElementById('terapeutaNombre').textContent = 
+        `Lic. ${citaActual.terapeuta_nombre} ${citaActual.terapeuta_apellido}`;
+      document.getElementById('fechaConsulta').textContent = 
+        new Date(citaActual.fecha_hora).toLocaleDateString('es-ES', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      document.getElementById('tipoAtencion').textContent = citaActual.tipo_atencion;
+      document.getElementById('fechaGeneracion').textContent = 
+        `Generado el: ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}`;
+    }
+
+    async function guardarReporte() {
+      const contenido = document.getElementById('contenidoReporte').value.trim();
+      const duracion = document.getElementById('duracionConsulta').value;
+      
+      if (!contenido) return mostrarError('Por favor complete las observaciones');
+      if (!duracion) return mostrarError('Seleccione la duración de la consulta');
+      
+      try {
+        const response = await fetch('/api/reportes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cita_id: citaActual.id_cita,
+            contenido: contenido,
+            duracion: duracion
+          })
+        });
+        
+        if (!response.ok) throw new Error('Error al guardar');
+        mostrarExito('Reporte guardado exitosamente');
+        
+      } catch (error) {
+        mostrarError(error.message);
+      }
+    }
+
+    async function generarPDF() {
+      if (!citaActual || !document.getElementById('contenidoReporte').value.trim()) {
+        return mostrarError('Complete las observaciones antes de generar el PDF');
+      }
+
+      try {
+        const doc = new jsPDF();
+        const margin = 15;
+        let yPos = margin;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        let currentPage = 1;
+        const lineHeight = 12;
+
+        // Configuración inicial
+        doc.setProperties({
+          title: `Reporte ${citaActual.paciente_nombre}`,
+          subject: 'Informe psicológico',
+          author: 'Consultorio Psicológico'
+        });
+
+        // Función para header
+        const addHeader = () => {
+          doc.setFontSize(18);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(0, 0, 0); // Texto en negro
+          doc.text('Informe Psicológico', pageWidth / 2, 15, { align: 'center' });
+        };
+
+        // Primera página
+        addHeader();
+        yPos = 40;
+
+        // Datos de la consulta
+        const duracion = document.getElementById('duracionConsulta').value;
+        const datos = [
+          ['Paciente:', `${citaActual.paciente_nombre} ${citaActual.paciente_apellido}`],
+          ['Terapeuta:', `Lic. ${citaActual.terapeuta_nombre} ${citaActual.terapeuta_apellido}`],
+          ['Fecha:', new Date(citaActual.fecha_hora).toLocaleDateString('es-ES', { dateStyle: 'full' })],
+          ['Hora:', new Date(citaActual.fecha_hora).toLocaleTimeString('es-ES', { timeStyle: 'short' })],
+          ['Duración:', duracion],
+          ['Tipo de atención:', citaActual.tipo_atencion]
+        ];
+
+        // Tabla de datos
+        doc.setFontSize(12);
+        datos.forEach(([label, value]) => {
+          doc.setFont('helvetica', 'bold');
+          doc.text(label, margin, yPos);
+          doc.setFont('helvetica', 'normal');
+          doc.text(value, margin + 30, yPos);
+          yPos += lineHeight;
+        });
+
+        // Observaciones
+        yPos += 20;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Observaciones de la Sesión:', margin, yPos);
+        yPos += lineHeight;
+        
+        // Configurar texto
+        doc.setFontSize(11);
+        const contenido = document.getElementById('contenidoReporte').value.trim();
+        const splitText = doc.splitTextToSize(contenido, pageWidth - margin * 2);
+        
+        // Agregar texto con manejo de páginas
+        for (let i = 0; i < splitText.length; i++) {
+          if (yPos > doc.internal.pageSize.getHeight() - 40) {
+            doc.addPage();
+            currentPage++;
+            yPos = margin;
+            addHeader();
+          }
+          doc.text(splitText[i], margin, yPos);
+          yPos += lineHeight;
+        }
+
+        // Firma
+        yPos += 20;
+        doc.setFontSize(10);
+        doc.text('Firma del profesional:', margin, yPos);
+        doc.line(margin, yPos + 3, margin + 50, yPos + 3);
+        yPos += lineHeight;
+        doc.text(`Lic. ${citaActual.terapeuta_nombre} ${citaActual.terapeuta_apellido}`, margin, yPos);
+
+        // Descargar PDF
+        doc.save(`Reporte_${citaActual.paciente_nombre.replace(/ /g, '_')}_${Date.now()}.pdf`);
+        
+      } catch (error) {
+        console.error('Error generando PDF:', error);
+        mostrarError('Error al generar el PDF: ' + error.message);
+      }
+    }
+
+    function mostrarError(mensaje) {
+      alert(`Error: ${mensaje}`);
+    }
+
+    function mostrarExito(mensaje) {
+      alert(`✓ ${mensaje}`);
+      window.location.reload();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarCitasCompletadas();
+      document.getElementById('selectCita').focus();
+    });
+  </script>
+</body>
+</html>

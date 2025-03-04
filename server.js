@@ -1,226 +1,245 @@
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
-const WebSocket = require('ws');
-const app = express();
 
-// Configuración de middlewares
+const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Configuración de PostgreSQL
+// Configuración de la conexión a PostgreSQL
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'DBconsultoriopsi',
   password: '0240',
   port: 5432,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000
 });
 
-// WebSocket Server
-const wss = new WebSocket.Server({ noServer: true });
-
-// Endpoints para Terapeutas
-app.post('/api/terapeutas', async (req, res) => {
-  const { nombre, apellido, correo, especialidad } = req.body;
-  try {
-    const result = await pool.query(
-      'INSERT INTO Terapeutas (nombre, apellido, correo, especialidad) VALUES ($1, $2, $3, $4) RETURNING *',
-      [nombre, apellido, correo, especialidad]
-    );
-    notificarCambios();
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error('Error creando terapeuta:', err);
-    res.status(500).json({ error: 'Error al crear terapeuta' });
-  }
-});
-
+// Ruta para obtener terapeutas
 app.get('/api/terapeutas', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id_terapeuta, nombre, apellido, especialidad FROM Terapeutas'
-    );
+    const result = await pool.query('SELECT * FROM Terapeutas');
     res.json(result.rows);
   } catch (err) {
-    console.error('Error obteniendo terapeutas:', err);
     res.status(500).json({ error: 'Error al obtener terapeutas' });
   }
 });
 
-// Endpoints para Pacientes (corregido)
+// Ruta para crear terapeutas
+app.post('/api/terapeutas', async (req, res) => {
+  const { nombre, apellido, correo, especialidad } = req.body;
+  try {
+    if (!nombre || !apellido || !correo || !especialidad) {
+      return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    }
+    const result = await pool.query(
+      'INSERT INTO Terapeutas (nombre, apellido, correo, especialidad) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nombre, apellido, correo, especialidad]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear terapeuta', detalle: err.message });
+  }
+});
+
+// Ruta para obtener pacientes
+app.get('/api/pacientes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM Pacientes');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener pacientes' });
+  }
+});
+
+// Ruta para crear pacientes
 app.post('/api/pacientes', async (req, res) => {
   const { nombre, apellido, cedula, correo, tipo_atencion, terapeuta_id } = req.body;
   try {
-    // Insertar en Pacientes
     const pacienteResult = await pool.query(
-      `INSERT INTO Pacientes 
-      (nombre, apellido, cedula, correo, tipo_atencion, terapeuta_id) 
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      'INSERT INTO Pacientes (nombre, apellido, cedula, correo, tipo_atencion, terapeuta_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [nombre, apellido, cedula, correo, tipo_atencion, terapeuta_id]
     );
-
-    // Insertar en ListaEspera
-    await pool.query(
-      `INSERT INTO ListaEspera 
-      (paciente_id, terapeuta_id) 
-      VALUES ($1, $2)`,
-      [pacienteResult.rows[0].id_paciente, terapeuta_id]
-    );
-
-    notificarCambios();
+    await pool.query('INSERT INTO ListaEspera (paciente_id, terapeuta_id) VALUES ($1, $2)', [pacienteResult.rows[0].id_paciente, terapeuta_id]);
     res.status(201).json(pacienteResult.rows[0]);
   } catch (err) {
-    console.error('Error creando paciente:', err);
     res.status(500).json({ error: 'Error al crear paciente' });
   }
 });
 
-// Endpoint lista de espera corregido
+// Ruta para obtener la lista de espera
 app.get('/api/lista-espera', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
-        le.id_lista,
-        p.nombre,
-        p.apellido,
-        le.estado,
-        le.fecha_solicitud,
-        t.nombre AS terapeuta_nombre
+      SELECT le.*, p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+             t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido
       FROM ListaEspera le
       JOIN Pacientes p ON le.paciente_id = p.id_paciente
-      LEFT JOIN Terapeutas t ON le.terapeuta_id = t.id_terapeuta
-      ORDER BY le.creado_en ASC
-    `);
+      JOIN Terapeutas t ON le.terapeuta_id = t.id_terapeuta
+      ORDER BY le.creado_en ASC`);
     res.json(result.rows);
   } catch (err) {
-    console.error('Error en lista de espera:', err);
     res.status(500).json({ error: 'Error al obtener lista de espera' });
   }
 });
 
-app.put('/api/lista-espera/prioridad', async (req, res) => {
-  const { orden } = req.body;
-  try {
-    await pool.query('BEGIN');
-    for (let i = 0; i < orden.length; i++) {
-      await pool.query(
-        'UPDATE ListaEspera SET prioridad = $1 WHERE id_lista = $2',
-        [i + 1, orden[i]]
-      );
-    }
-    await pool.query('COMMIT');
-    notificarCambios();
-    res.json({ success: true });
-  } catch (err) {
-    await pool.query('ROLLBACK');
-    res.status(500).json({ error: 'Error actualizando prioridades' });
-  }
-});
-
-app.put('/api/lista-espera/:id', async (req, res) => {
-  const { id } = req.params;
-  const { terapeuta_id, estado, observaciones } = req.body;
-  try {
-    const result = await pool.query(
-      `UPDATE ListaEspera 
-       SET terapeuta_id = COALESCE($1, terapeuta_id),
-           estado = COALESCE($2, estado),
-           observaciones = COALESCE($3, observaciones)
-       WHERE id_lista = $4 RETURNING *`,
-      [terapeuta_id, estado, observaciones, id]
-    );
-    notificarCambios();
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error actualizando lista:', err);
-    res.status(500).json({ error: 'Error al actualizar registro' });
-  }
-});
-
-// Endpoints para Calendario
-app.get('/api/eventos-lista-espera', async (req, res) => {
+// Ruta para obtener un paciente específico de la lista de espera
+app.get('/api/lista-espera/:id', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
-        le.id_lista AS id,
-        CONCAT(p.nombre, ' ', p.apellido) AS title,
-        le.fecha_solicitud AS start,
-        le.estado,
-        le.observaciones,
-        t.nombre AS terapeuta
+      SELECT le.*, p.id_paciente, p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+             t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido
       FROM ListaEspera le
       JOIN Pacientes p ON le.paciente_id = p.id_paciente
-      LEFT JOIN Terapeutas t ON le.terapeuta_id = t.id_terapeuta
-    `);
+      JOIN Terapeutas t ON le.terapeuta_id = t.id_terapeuta
+      WHERE le.id_lista = $1`, [req.params.id]);
     
-    const eventos = result.rows.map(evento => ({
-      ...evento,
-      backgroundColor: evento.estado === 'pendiente' ? '#f59e0b' : '#10b981',
-      borderColor: evento.estado === 'pendiente' ? '#f59e0b' : '#10b981',
-      extendedProps: {
-        observaciones: evento.observaciones,
-        estado: evento.estado,
-        terapeuta: evento.terapeuta
-      }
-    }));
-    
-    res.json(eventos);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Paciente no encontrado en lista de espera' });
+    }
+    res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error en eventos calendario:', err);
-    res.status(500).json({ error: 'Error al obtener eventos' });
+    res.status(500).json({ error: 'Error al obtener paciente de lista de espera' });
   }
 });
 
-// Endpoints para Citas
-app.get('/api/citas', async (req, res) => {
+// Ruta para crear citas
+app.post('/api/citas', async (req, res) => {
+  const { paciente_id, terapeuta_id, fecha_hora, duracion } = req.body;
+  try {
+    const errores = [];
+    if (!paciente_id) errores.push('paciente_id es requerido');
+    if (!terapeuta_id) errores.push('terapeuta_id es requerido');
+    if (!fecha_hora) errores.push('fecha_hora es requerida');
+    if (errores.length > 0) return res.status(400).json({ error: 'Datos incompletos', detalles: errores });
+    
+    const result = await pool.query(
+      `INSERT INTO Citas (paciente_id, terapeuta_id, fecha_hora, duracion, estado) VALUES ($1, $2, $3, $4, 'pendiente') RETURNING *`,
+      [paciente_id, terapeuta_id, new Date(fecha_hora).toISOString(), duracion || '1 hour']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear cita', detalle: err.message });
+  }
+});
+
+// Ruta para completar citas
+app.patch('/api/citas/:id/completar', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE Citas SET estado = 'completada' WHERE id_cita = $1 RETURNING *`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Cita no encontrada' });
+    res.json({ mensaje: 'Cita completada', cita: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al actualizar cita' });
+  }
+});
+
+// Ruta para eliminar citas
+app.delete('/api/citas/:id', async (req, res) => {
+  try {
+    const result = await pool.query('DELETE FROM Citas WHERE id_cita = $1 RETURNING *', [req.params.id]);
+    if (result.rowCount === 0) return res.status(404).json({ error: 'Cita no encontrada' });
+    res.json({ mensaje: 'Cita eliminada' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al eliminar cita' });
+  }
+});
+
+// Ruta para obtener citas por lista de espera
+app.get('/api/citas-lista/:id', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
-        c.id_cita,
-        c.fecha_hora,
-        c.duracion,
-        p.nombre AS paciente_nombre,
-        t.nombre AS terapeuta_nombre
+      SELECT c.*, 
+        p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+        t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido
       FROM Citas c
+      JOIN ListaEspera le ON c.paciente_id = le.paciente_id 
+        AND c.terapeuta_id = le.terapeuta_id
       JOIN Pacientes p ON c.paciente_id = p.id_paciente
       JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
-    `);
+      WHERE le.id_lista = $1
+      ORDER BY c.fecha_hora DESC`, 
+      [req.params.id]);
+
     res.json(result.rows);
   } catch (err) {
-    console.error('Error obteniendo citas:', err);
+    console.error('Error en consulta de citas:', err);
     res.status(500).json({ error: 'Error al obtener citas' });
   }
 });
 
-// WebSocket
-function notificarCambios() {
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({ tipo: 'actualizacion' }));
+// Ruta para obtener citas completadas
+app.get('/api/citas-completadas', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.id_cita, c.fecha_hora, 
+             p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+             t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido,
+             p.tipo_atencion
+      FROM Citas c
+      JOIN Pacientes p ON c.paciente_id = p.id_paciente
+      JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
+      WHERE c.estado = 'completada'
+      ORDER BY c.fecha_hora DESC`);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener citas completadas' });
+  }
+});
+
+// Ruta para obtener una cita específica por ID
+app.get('/api/citas/:id', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.*, 
+        p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+        t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido,
+        p.tipo_atencion
+      FROM Citas c
+      JOIN Pacientes p ON c.paciente_id = p.id_paciente
+      JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
+      WHERE c.id_cita = $1`, 
+      [req.params.id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
     }
-  });
-}
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error al obtener cita:', err);
+    res.status(500).json({ error: 'Error al obtener cita' });
+  }
+});
 
+// Ruta para crear reportes
+app.post('/api/reportes', async (req, res) => {
+  const { cita_id, contenido, duracion } = req.body;
+  try {
+    await pool.query(
+      'UPDATE Citas SET duracion = $1 WHERE id_cita = $2',
+      [duracion, cita_id]
+    );
 
-// Manejo de errores
-app.use((err, req, res, next) => {
-  console.error('Error global:', err);
-  res.status(500).json({ error: 'Error interno del servidor' });
+    const result = await pool.query(
+      'INSERT INTO Reportes (cita_id, contenido) VALUES ($1, $2) RETURNING *',
+      [cita_id, contenido]
+    );
+    
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al crear reporte' });
+  }
 });
 
 // Iniciar servidor
 const server = app.listen(5000, () => {
   console.log('Servidor HTTP en http://localhost:5000');
-});
-
-
-
-// Adjuntar WebSocket al servidor HTTP
-
-server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, ws => {
-    wss.emit('connection', ws, request);
-  });
 });

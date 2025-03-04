@@ -345,6 +345,75 @@ body {
   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css");
 
+.admin-only {
+  display: none;
+}
+
+.user-info {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.user-info img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.logout-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.3rem 1rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background: #bb2d3b;
+}
+
+/* Mostrar elementos de admin */
+body.admin .admin-only {
+  display: block !important;
+}
+
+body.terapeuta .admin-only {
+  display: none !important;
+}
+
+.my-form__button {
+  background: #2563eb;
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.my-form__button:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+}
+
+.text-field input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.admin-only {
+  display: none;
+}
