@@ -417,3 +417,17 @@ body.terapeuta .admin-only {
 .admin-only {
   display: none;
 }
+
+.logout-button {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.logout-button:hover {
+  background-color: darkred;
+}

@@ -180,9 +180,9 @@ app.get('/api/citas-completadas', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT c.id_cita, c.fecha_hora, 
-             p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
-             t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido,
-             p.tipo_atencion
+      p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+      t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido,
+      p.tipo_atencion
       FROM Citas c
       JOIN Pacientes p ON c.paciente_id = p.id_paciente
       JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
@@ -240,6 +240,6 @@ app.post('/api/reportes', async (req, res) => {
 });
 
 // Iniciar servidor
-const server = app.listen(5000, () => {
-  console.log('Servidor HTTP en http://localhost:5000');
+const server = app.listen(5001, () => {
+  console.log('Servidor HTTP en http://localhost:5001');
 });

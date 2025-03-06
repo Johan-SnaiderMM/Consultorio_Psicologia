@@ -7,17 +7,92 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        .sidebar {
-            width: 250px;
-            min-height: 100vh;
-            position: fixed;
-            left: -250px;
-            top: 0;
-            transition: all 0.3s;
-            z-index: 1000;
-            background: #0d6efd;
-        }
-        .sidebar.active { left: 0; }
+            :root {
+      --color-primario: #2563eb;
+      --color-secundario: #1e40af;
+      --sombra-suave: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      background: #f8fafc;
+      min-height: 100vh;
+    }
+
+    .navbar-maestra {
+      background: var(--color-primario) !important;
+      box-shadow: var(--sombra-suave);
+    }
+
+    .sidebar {
+      width: 250px;
+      min-height: 100vh;
+      position: fixed;
+      left: -250px;
+      transition: all 0.3s;
+      background: #0d6efd;
+      z-index: 1000;
+    }
+
+    .sidebar.active {
+      left: 0;
+    }
+
+    .main-content {
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+
+    .main-content.active {
+      margin-left: 250px;
+    }
+
+    .formulario-contenedor {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: var(--sombra-suave);
+    }
+
+    .campo-formulario label {
+      font-weight: 500;
+      color: var(--color-secundario);
+      margin-bottom: 0.5rem;
+    }
+
+    .campo-formulario input,
+    .campo-formulario select {
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem;
+      transition: border-color 0.3s;
+    }
+
+    .campo-formulario input:focus {
+      border-color: var(--color-primario);
+      box-shadow: none;
+    }
+
+    .menu-toggle {
+      position: fixed;
+      left: 15px;
+      top: 15px;
+      z-index: 999;
+      cursor: pointer;
+      background: white;
+      border-radius: 5px;
+      padding: 8px 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .floating-form {
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
         .main-content {
             transition: all 0.3s;
             margin-left: 0;
@@ -39,31 +114,43 @@
     </style>
 </head>
 <body class="py-4">
-    <!-- Botón hamburguesa -->
-    <div class="menu-toggle" onclick="toggleSidebar()">
-        <i class="bi bi-list"></i>
-    </div>
 
-    <!-- Barra lateral -->
-    <nav class="sidebar bg-primary text-white">
-        <div class="p-3">
-            <h4>Consultorio Psicológico</h4>
-            <button class="btn btn-light btn-sm mb-3" onclick="toggleSidebar()">
-                <i class="bi bi-x-lg"></i>
-            </button>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link text-white" href="Lista_de_espera.html">Lista de Espera</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white" href="ingresar_pacientes.html">Registrar Pacientes</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white" href="ingresar_terapeutas.html">Registrar Terapeutas</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+    <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-maestra">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-heart-pulse me-2"></i>Consultorio Psicológico
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="Lista_de_espera.html">
+              <i class="bi bi-list-task me-1"></i>Lista de Espera
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="reportes.html">
+              <i class="bi bi-file-text me-1"></i>Reportes
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="ingresar_pacientes.html">
+              <i class="bi bi-person-plus me-1"></i>Nuevo Paciente
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="ingresar_terapeuta.html">
+              <i class="bi bi-briefcase me-1"></i>Nuevo Terapeuta
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
 
     <!-- Contenido principal -->
     <div class="main-content">
