@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login Consultorio Psicológico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Fuentes y estilos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Mulish&display=swap"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="icon" type="image/png" href="assets/psicologia.png" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+      /* Spinner de carga */
+      #loadingSpinner {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+      }
+      .spinner-border {
+        width: 3rem;
+        height: 3rem;
+      }
+
+      /* Contenedor de mensajes de error */
+      #error-message {
+        display: none;
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Spinner de carga -->
+    <div id="loadingSpinner">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
+    <div class="form-wrapper">
+      <div class="form-side">
+        <a href="#" title="Logo">
+          <img src="assets/Logo.png" class="logo" alt="Logo" />
+        </a>
+        <br />
+
+        <!-- Contenedor de error -->
+        <div id="error-message"></div>
+
+        <form class="my-form">
+          <div class="form-welcome-row">
+            <h1>Iniciar sesión</h1>
+          </div>
+
+          <!-- Google Identity Config -->
+          <div
+            id="g_id_onload"
+            data-client_id="647296157953-gc4fnpntd0em5019o1e3r11ceipd147r.apps.googleusercontent.com"
+            data-callback="handleCredentialResponse"
+            data-auto_prompt="false"
+          ></div>
+
+          <!-- Botón de Google -->
+          <div class="socials-row">
+            <div
+              class="g_id_signin"
+              data-type="standard"
+              data-size="large"
+            ></div>
+          </div>
+
+          <div class="divider">
+            <div class="divider-line"></div>
+            CUIDADO!
+            <div class="divider-line"></div>
+          </div>
+
+          <p>Solo permitimos correos universitarios @amigo.edu.co</p>
+        </form>
+      </div>
+
+      <div class="info-side">
+        <img src="assets/consultorio.png" alt="Mock" class="mockup" />
+      </div>
+    </div>
+
+    <script>
+      // Mostrar el spinner
+      function mostrarSpinner() {
+        document.getElementById('loadingSpinner').style.display = 'block';
+      }
+
+      // Ocultar el spinner
+      function ocultarSpinner() {
+        document.getElementById('loadingSpinner').style.display = 'none';
+      }
+
+      // Mostrar mensaje de error
+      function showError(message) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+      }
+
+      // Limpiar mensaje de error
+      function clearError() {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+      }
+
+      // Función para manejar la respuesta de credenciales de Google
+      function handleCredentialResponse(response) {
+        mostrarSpinner();
+        clearError();
+
+        // Enviar el token al backend para validar
+        fetch('http://localhost:5001/api/login-google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tokenId: response.credential })
+        })
+        .then(resp => resp.json())
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          
+          // Guardar en localStorage con el rol real
+          localStorage.setItem('user', JSON.stringify({
+            email: data.email,
+            role: data.rol // Usar el rol de la base de datos
+          }));
+          
+          window.location.href = 'Lista_de_espera.html';
+        })
+        .catch(error => {
+          showError(error.message);
+          console.error('Error:', error);
+        })
+        .finally(() => ocultarSpinner());
+      }
+
+      // Inicializar Google Identity Services
+      window.onload = function () {
+        google.accounts.id.initialize({
+          client_id:
+            '647296157953-gc4fnpntd0em5019o1e3r11ceipd147r.apps.googleusercontent.com',
+          callback: handleCredentialResponse,
+        });
+
+        google.accounts.id.renderButton(
+          document.querySelector('.g_id_signin'),
+          { theme: 'outline', size: 'large' }
+        );
+
+        // Descomenta si deseas forzar el prompt de Google cada vez
+        // google.accounts.id.prompt();
+      };
+    </script>
+  </body>
+</html>

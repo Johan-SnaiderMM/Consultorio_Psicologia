@@ -1,0 +1,113 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Lista de espera</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+	</head>
+	<body class="is-preload homepage">
+		<div id="page-wrapper">
+			<!-- Header -->
+				<div id="header-wrapper">
+					<header id="header" class="container">
+						<!-- Logo -->
+							<div id="logo">
+								<span>Universidad Catolica Luis Amigó</span>
+							</div>
+						<!-- Nav -->
+							<nav id="nav">
+								<ul>
+									<li class="current"><a href="index.html">Inicio</a></li>
+									<li>
+										<a href="#">Terapeutas</a>
+										<ul>
+											<li><a href="#">Consultar estado del paciente</a></li>
+											<li><a href="#">Ver listado de pacientes</a></li>
+											<li><a href="#">Acceder a información de sesiones</a></li>
+										</ul>
+									</li>
+									<li>
+										<a href="#">Administradores</a>
+										<ul>
+											<li><a href="#">Aplicar filtros de supervisión</a></li>
+											<li><a href="#">Filtrar pacientes por estado</a></li>
+											<li><a href="#">Ver detalles de pacientes</a></li>
+											<li><a href="#">Exportar listas de pacientes</a></li>
+											<li><a href="#">Generar reportes de citas</a></li>
+											<li><a href="#">Buscar datos de terapeutas</a></li>
+										</ul>
+									</li>
+								</ul>
+							</nav>
+					</header>
+				</div>
+
+			<!-- Lista de espera -->
+			<div class="container">
+				<h2>Lista de Espera</h2>
+				<ul id="listaEspera"></ul>
+				<h3>Registrar Cita</h3>
+				<form id="registroCita">
+					<input type="text" id="nombre" placeholder="Nombre completo" required /><br>
+					<input type="text" id="documento" placeholder="Documento de identidad" required /><br>
+					<input type="tel" id="telefono" placeholder="Teléfono de contacto" required /><br>
+					<input type="email" id="correo" placeholder="Correo electrónico" required /><br>
+					<textarea id="tipoConsulta" placeholder="Tipo de consulta psicológica" required></textarea><br>
+					<input type="datetime-local" id="fechaHora" required /><br>
+					<select id="terapeuta" required>
+						<option value="">Seleccione un terapeuta</option>
+						<option value="Terapeuta 1">Terapeuta 1</option>
+						<option value="Terapeuta 2">Terapeuta 2</option>
+						<option value="Terapeuta 3">Terapeuta 3</option>
+					</select><br>
+					<button type="button" onclick="agendarCita()">Agendar Cita</button>
+				</form>
+				<h3>Citas Registradas</h3>
+				<ul id="listaCitas"></ul>
+			</div>
+		</div>
+
+		<!-- Scripts -->
+		<script src="assets/js/jquery.min.js"></script>
+		<script src="assets/js/jquery.dropotron.min.js"></script>
+		<script src="assets/js/browser.min.js"></script>
+		<script src="assets/js/breakpoints.min.js"></script>
+		<script src="assets/js/util.js"></script>
+		<script src="assets/js/main.js"></script>
+		<script>
+			function agregarPaciente() {
+				var paciente = document.getElementById("nombre").value;
+				if (paciente) {
+					var lista = document.getElementById("listaEspera");
+					var li = document.createElement("li");
+					li.textContent = paciente;
+					lista.appendChild(li);
+					document.getElementById("nombre").value = "";
+				}
+			}
+
+			function agendarCita() {
+				var nombre = document.getElementById("nombre").value;
+				var documento = document.getElementById("documento").value;
+				var fechaNacimiento = document.getElementById("fechaNacimiento").value;
+				var telefono = document.getElementById("telefono").value;
+				var correo = document.getElementById("correo").value;
+				var tipoConsulta = document.getElementById("tipoConsulta").value;
+				var fechaHora = document.getElementById("fechaHora").value;
+				var terapeuta = document.getElementById("terapeuta").value;
+
+				if (nombre && documento && fechaNacimiento && telefono && correo && tipoConsulta && fechaHora && terapeuta) {
+					var lista = document.getElementById("listaCitas");
+					var li = document.createElement("li");
+					li.textContent = `Cita: ${nombre}, ${documento}, ${fechaNacimiento}, ${telefono}, ${correo}, ${tipoConsulta}, ${fechaHora}, Terapeuta: ${terapeuta}`;
+					lista.appendChild(li);
+
+					document.getElementById("registroCita").reset();
+				} else {
+					alert("Por favor, complete todos los campos.");
+				}
+			}
+		</script>
+	</body>
+</html>

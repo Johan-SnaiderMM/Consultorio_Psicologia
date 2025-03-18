@@ -1,0 +1,73 @@
+@startuml
+
+!define primary_key(x) <b>x</b>
+!define foreign_key(x) <u>x</u>
+
+entity Terapeutas {
+    primary_key(id_terapeuta) SERIAL
+    nombre VARCHAR(50)
+    apellido VARCHAR(50)
+    correo VARCHAR(100) UNIQUE
+    especialidad VARCHAR(100)
+    estado estado_usuario DEFAULT 'activo'
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+}
+
+entity Pacientes {
+    primary_key(id_paciente) SERIAL
+    nombre VARCHAR(50)
+    apellido VARCHAR(50)
+    cedula VARCHAR(20) UNIQUE
+    correo VARCHAR(100) UNIQUE
+    tipo_atencion VARCHAR(50)
+    estado ENUM('activo', 'pausa', 'desertado') DEFAULT 'activo'
+    foreign_key(terapeuta_id) INT
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+}
+
+entity Usuarios {
+    primary_key(id) SERIAL
+    email VARCHAR(255) UNIQUE
+    password_hash VARCHAR(255)
+    role ENUM('admin', 'terapeuta')
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+}
+
+entity Citas {
+    primary_key(id_cita) SERIAL
+    foreign_key(paciente_id) INT
+    foreign_key(terapeuta_id) INT
+    fecha_hora TIMESTAMPTZ
+    duracion INTERVAL DEFAULT '1 hour'
+    estado estado_cita_type DEFAULT 'programada'
+    rango_horario TSTZRANGE
+    observaciones TEXT
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    tipo_atencion VARCHAR(50)
+}
+
+entity ListaEspera {
+    primary_key(id_lista) SERIAL
+    foreign_key(paciente_id) INT
+    foreign_key(terapeuta_id) INT
+    fecha_solicitud TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    prioridad prioridad_type DEFAULT 'media'
+    estado estado_lista_type DEFAULT 'pendiente'
+    observaciones TEXT
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+}
+
+entity Reportes {
+    primary_key(id_reporte) SERIAL
+    foreign_key(cita_id) INT
+    contenido TEXT
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+}
+
+Terapeutas ||--o{ Pacientes : asigna
+Terapeutas ||--o{ Citas : atiende
+Pacientes ||--o{ Citas : programa
+Pacientes ||--o{ ListaEspera : solicita
+Citas ||--o{ Reportes : genera
+
+@enduml

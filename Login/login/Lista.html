@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lista de Espera</title>
+    <style>
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+      }
+      .activo {
+        background-color: lightgreen;
+      }
+      .intermitente {
+        background-color: yellow;
+      }
+      .pausa {
+        background-color: lightblue;
+      }
+      .deserto {
+        background-color: lightcoral;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Lista de Espera</h2>
+    <label for="terapeuta">Filtrar por terapeuta:</label>
+    <input type="text" id="terapeuta" onkeyup="filtrarTerapeuta()" />
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Edad</th>
+          <th>Dirección</th>
+          <th>Cédula</th>
+          <th>Correo</th>
+          <th>Tipo de Atención</th>
+          <th>Estado</th>
+          <th>Hora de Cita</th>
+        </tr>
+      </thead>
+      <tbody id="listaPacientes">
+        <tr class="activo">
+          <td>Juan Pérez</td>
+          <td>30</td>
+          <td>Av. Principal</td>
+          <td>12345678</td>
+          <td>juan@example.com</td>
+          <td>Psicología</td>
+          <td>Activo</td>
+          <td>10:00 AM</td>
+        </tr>
+        <tr class="intermitente">
+          <td>Maria Gómez</td>
+          <td>25</td>
+          <td>Calle 10</td>
+          <td>87654321</td>
+          <td>maria@example.com</td>
+          <td>Fisioterapia</td>
+          <td>Intermitente</td>
+          <td>11:30 AM</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <script>
+      function filtrarTerapeuta() {
+        let input = document.getElementById("terapeuta").value.toLowerCase();
+        let filas = document.querySelectorAll("#listaPacientes tr");
+
+        filas.forEach((fila) => {
+          let nombre = fila.cells[0].textContent.toLowerCase();
+          fila.style.display = nombre.includes(input) ? "" : "none";
+        });
+      }
+    </script>
+  </body>
+</html>

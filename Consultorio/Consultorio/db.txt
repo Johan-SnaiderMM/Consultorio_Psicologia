@@ -1,0 +1,323 @@
+-- (1) Eliminar la BD si existe
+DROP DATABASE IF EXISTS DBconsultoriopsi;
+
+-- (2) Crear la BD
+CREATE DATABASE DBconsultoriopsi;
+
+------------------------------------------------------------------------
+-- 1. ELIMINAR TABLAS Y TIPOS (si ya existen)
+------------------------------------------------------------------------
+DROP TABLE IF EXISTS Reportes CASCADE;
+DROP TABLE IF EXISTS ListaEspera CASCADE;
+DROP TABLE IF EXISTS Citas CASCADE;
+DROP TABLE IF EXISTS Pacientes CASCADE;
+DROP TABLE IF EXISTS Terapeutas CASCADE;
+DROP TABLE IF EXISTS Usuarios CASCADE;
+
+DROP TYPE IF EXISTS estado_usuario CASCADE;
+DROP TYPE IF EXISTS prioridad_type CASCADE;
+DROP TYPE IF EXISTS estado_cita_type CASCADE;
+DROP TYPE IF EXISTS estado_lista_type CASCADE;
+DROP TYPE IF EXISTS tipo_notificacion CASCADE;
+DROP TYPE IF EXISTS tipo_reporte CASCADE;
+DROP TYPE IF EXISTS estado_paciente_type CASCADE;  -- Nuevo para Pacientes
+
+------------------------------------------------------------------------
+-- 2. CREAR TIPOS ENUM
+------------------------------------------------------------------------
+CREATE TYPE estado_usuario AS ENUM ('activo', 'inactivo');
+CREATE TYPE prioridad_type AS ENUM ('alta', 'media', 'baja');
+CREATE TYPE estado_cita_type AS ENUM ('pendiente','programada','en curso','completada','cancelada');
+CREATE TYPE estado_lista_type AS ENUM ('pendiente', 'en progreso', 'finalizado');
+CREATE TYPE tipo_notificacion AS ENUM ('recordatorio', 'confirmación', 'cancelación', 'promoción');
+CREATE TYPE tipo_reporte AS ENUM ('uso', 'financiero', 'pacientes', 'terapeutas');
+
+-- Nuevo ENUM para el estado de Pacientes
+CREATE TYPE estado_paciente_type AS ENUM ('activo', 'pausa', 'desertado');
+
+------------------------------------------------------------------------
+-- 3. HABILITAR EXTENSIÓN NECESARIA
+------------------------------------------------------------------------
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+------------------------------------------------------------------------
+-- 4. TABLA TERAPEUTAS
+------------------------------------------------------------------------
+CREATE TABLE Terapeutas (
+    id_terapeuta SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    correo VARCHAR(100) UNIQUE NOT NULL,
+    especialidad VARCHAR(100),
+    estado estado_usuario DEFAULT 'activo',
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+select * from Terapeutas;
+------------------------------------------------------------------------
+-- 5. TABLA PACIENTES (usa ENUM en "estado")
+------------------------------------------------------------------------
+CREATE TABLE Pacientes (
+    id_paciente SERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    cedula VARCHAR(20) UNIQUE NOT NULL,
+    correo VARCHAR(100) UNIQUE NOT NULL,
+    tipo_atencion VARCHAR(50) NOT NULL,
+    estado estado_paciente_type DEFAULT 'activo',  -- Se reemplaza el VARCHAR(20)
+    terapeuta_id INT REFERENCES Terapeutas(id_terapeuta),
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+select * from Pacientes;
+------------------------------------------------------------------------
+-- 6. TABLA USUARIOS
+------------------------------------------------------------------------
+CREATE TABLE Usuarios (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'terapeuta')),
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Vincular Terapeuta con Usuario (opcional)
+ALTER TABLE Terapeutas
+    ADD COLUMN usuario_id INT UNIQUE,
+    ADD CONSTRAINT fk_terapeuta_usuario
+        FOREIGN KEY (usuario_id) REFERENCES Usuarios(id);
+
+------------------------------------------------------------------------
+-- 7. TABLA CITAS
+------------------------------------------------------------------------
+CREATE TABLE Citas (
+    id_cita SERIAL PRIMARY KEY,
+    paciente_id INT NOT NULL REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
+    terapeuta_id INT NOT NULL REFERENCES Terapeutas(id_terapeuta) ON DELETE CASCADE,
+    fecha_hora TIMESTAMPTZ NOT NULL,
+    duracion INTERVAL DEFAULT '1 hour',
+    estado estado_cita_type DEFAULT 'programada',
+    rango_horario TSTZRANGE,
+    observaciones TEXT,
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    tipo_atencion VARCHAR(50)  -- Campo agregado previamente
+);
+select * from Citas;
+------------------------------------------------------------------------
+-- 8. TABLA LISTA DE ESPERA
+------------------------------------------------------------------------
+CREATE TABLE ListaEspera (
+    id_lista SERIAL PRIMARY KEY,
+    paciente_id INT NOT NULL REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
+    terapeuta_id INT NOT NULL REFERENCES Terapeutas(id_terapeuta) ON DELETE CASCADE,
+    fecha_solicitud TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    prioridad prioridad_type DEFAULT 'media',
+    estado estado_lista_type DEFAULT 'pendiente',
+    observaciones TEXT,
+    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+select * from ListaEspera;
+------------------------------------------------------------------------
+-- 9. TABLA REPORTES
+------------------------------------------------------------------------
+CREATE TABLE Reportes (
+  id_reporte SERIAL PRIMARY KEY,
+  cita_id INT REFERENCES Citas(id_cita),
+  contenido TEXT NOT NULL,
+  creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+------------------------------------------------------------------------
+-- 10. FUNCIONES Y TRIGGERS
+------------------------------------------------------------------------
+
+-- Función para actualizar rango_horario
+CREATE OR REPLACE FUNCTION actualizar_rango_horario()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.rango_horario := tstzrange(
+    NEW.fecha_hora, 
+    NEW.fecha_hora + NEW.duracion::INTERVAL, 
+    '[)'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para actualizar rango horario
+CREATE TRIGGER trigger_actualizar_rango_horario
+BEFORE INSERT OR UPDATE ON Citas
+FOR EACH ROW EXECUTE FUNCTION actualizar_rango_horario();
+
+-- Función para actualizar la Lista de Espera
+CREATE OR REPLACE FUNCTION actualizar_lista_espera()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE ListaEspera
+  SET estado = 'en progreso'
+  WHERE paciente_id = NEW.paciente_id
+    AND estado != 'en progreso'; -- Evitar actualizaciones innecesarias
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para actualizar lista de espera al insertar Cita
+CREATE TRIGGER trigger_actualizar_lista_espera
+AFTER INSERT ON Citas
+FOR EACH ROW EXECUTE FUNCTION actualizar_lista_espera();
+
+------------------------------------------------------------------------
+-- 11. RESTRICCIONES (EXCLUDE) PARA EVITAR SOLAPAMIENTO DE CITAS
+------------------------------------------------------------------------
+ALTER TABLE Citas ADD CONSTRAINT no_solapamiento_citas
+EXCLUDE USING gist (
+  terapeuta_id WITH =,
+  rango_horario WITH &&
+);
+
+-- Ajustar la columna estado en Citas para usar enum estado_cita_type
+ALTER TABLE Citas 
+  ALTER COLUMN estado TYPE estado_cita_type 
+  USING estado::text::estado_cita_type;
+
+------------------------------------------------------------------------
+-- 12. ÍNDICES
+------------------------------------------------------------------------
+CREATE INDEX idx_citas_paciente ON Citas(paciente_id);
+CREATE INDEX idx_citas_terapeuta ON Citas(terapeuta_id);
+CREATE INDEX idx_citas_terapeuta_fecha ON Citas(terapeuta_id, fecha_hora);
+
+CREATE INDEX idx_pacientes_estado ON Pacientes(estado);
+CREATE INDEX idx_terapeutas_estado ON Terapeutas(estado);
+
+CREATE INDEX idx_lista_espera_estado ON ListaEspera(estado);
+CREATE INDEX idx_lista_espera_pac_ter ON ListaEspera(paciente_id, terapeuta_id);
+
+------------------------------------------------------------------------
+-- 13. CREAR USUARIOS DE EJEMPLO
+------------------------------------------------------------------------
+-- Admin
+INSERT INTO Usuarios (email, rol)
+VALUES ('dilan.pereava@amigo.edu.co', 'admin')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO Usuarios (email, rol)
+VALUES ('admin@consultorio.com', 'admin'),
+       ('terapeuta1@consultorio.com', 'terapeuta')
+ON CONFLICT (email) DO NOTHING;
+
+------------------------------------------------------------------------
+-- 14. EJEMPLO DE INSERTAR UN TERAPEUTA Y UN PACIENTE
+-- (Usamos la lógica de "si no existe, lo creamos")
+------------------------------------------------------------------------
+
+-- 14.1 Insertar o usar terapeuta "carlos.perez@example.com"
+WITH existing_terapeuta AS (
+    SELECT id_terapeuta FROM Terapeutas WHERE correo = 'carlos.perez@example.com'
+),
+inserted_terapeuta AS (
+    INSERT INTO Terapeutas (nombre, apellido, correo, especialidad)
+    SELECT 'Carlos', 'Pérez', 'carlos.perez@example.com', 'Psicología Clínica'
+    WHERE NOT EXISTS (SELECT 1 FROM existing_terapeuta)
+    RETURNING id_terapeuta
+)
+SELECT id_terapeuta FROM existing_terapeuta
+UNION ALL
+SELECT id_terapeuta FROM inserted_terapeuta;
+
+-- 14.2 Insertar paciente "María Gómez" asignado a ese terapeuta
+WITH terapeuta AS (
+    SELECT id_terapeuta FROM Terapeutas WHERE correo = 'carlos.perez@example.com'
+),
+existing_paciente AS (
+    SELECT id_paciente FROM Pacientes WHERE correo = 'maria.gomez@example.com'
+),
+inserted_paciente AS (
+    INSERT INTO Pacientes (nombre, apellido, cedula, correo, tipo_atencion, terapeuta_id)
+    SELECT 'María', 'Gómez', '12345678', 'maria.gomez@example.com', 'Terapia individual', id_terapeuta
+    FROM terapeuta
+    WHERE NOT EXISTS (SELECT 1 FROM existing_paciente)
+    RETURNING id_paciente
+)
+SELECT id_paciente FROM existing_paciente
+UNION ALL
+SELECT id_paciente FROM inserted_paciente;
+
+-- 14.3 Insertar una cita si no existe
+WITH paciente AS (
+    SELECT id_paciente FROM Pacientes WHERE correo = 'maria.gomez@example.com'
+),
+terapeuta AS (
+    SELECT id_terapeuta FROM Terapeutas WHERE correo = 'carlos.perez@example.com'
+),
+existing_cita AS (
+    SELECT id_cita FROM Citas
+    WHERE paciente_id = (SELECT id_paciente FROM paciente)
+),
+inserted_cita AS (
+    INSERT INTO Citas (paciente_id, terapeuta_id, fecha_hora, tipo_atencion)
+    SELECT id_paciente, id_terapeuta, NOW(), 'Terapia individual'
+    FROM paciente, terapeuta
+    WHERE NOT EXISTS (SELECT 1 FROM existing_cita)
+    RETURNING id_cita
+)
+SELECT id_cita FROM existing_cita
+UNION ALL
+SELECT id_cita FROM inserted_cita;
+
+-- 14.4 Insertar en lista de espera si no existe
+WITH paciente AS (
+    SELECT id_paciente FROM Pacientes WHERE correo = 'maria.gomez@example.com'
+),
+terapeuta AS (
+    SELECT id_terapeuta FROM Terapeutas WHERE correo = 'carlos.perez@example.com'
+),
+existing_lista AS (
+    SELECT 
+      paciente_id, 
+      terapeuta_id, 
+      prioridad, 
+      estado, 
+      observaciones
+    FROM ListaEspera
+    WHERE paciente_id = (SELECT id_paciente FROM paciente)
+),
+inserted_lista AS (
+    INSERT INTO ListaEspera (paciente_id, terapeuta_id, prioridad, estado, observaciones)
+    SELECT 
+      id_paciente, 
+      id_terapeuta, 
+      'alta', 
+      'pendiente', 
+      'Paciente solicita cita urgente por crisis emocional.'
+    FROM paciente, terapeuta
+    WHERE NOT EXISTS (SELECT 1 FROM existing_lista)
+    RETURNING paciente_id, terapeuta_id, prioridad, estado, observaciones
+)
+SELECT 
+  paciente_id, 
+  terapeuta_id, 
+  prioridad, 
+  estado, 
+  observaciones
+FROM existing_lista
+UNION ALL
+SELECT 
+  paciente_id, 
+  terapeuta_id, 
+  prioridad, 
+  estado, 
+  observaciones
+FROM inserted_lista;
+
+-- 14.5 Insertar reporte si la cita existe
+WITH cita AS (
+    SELECT id_cita FROM Citas
+    WHERE paciente_id = (SELECT id_paciente FROM Pacientes WHERE correo = 'maria.gomez@example.com')
+)
+INSERT INTO Reportes (cita_id, contenido)
+SELECT id_cita, 'Sesión inicial con la paciente María Gómez. Se establecieron objetivos terapéuticos.'
+FROM cita
+ON CONFLICT DO NOTHING;
+
+------------------------------------------------------------------------
+-- FIN DEL SCRIPT
+------------------------------------------------------------------------

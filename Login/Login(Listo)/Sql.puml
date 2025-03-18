@@ -1,0 +1,113 @@
+@startuml
+
+entity "Usuarios" as U {
+    + id_usuario : INT <<PK>>
+    --
+    nombre : VARCHAR
+    apellido : VARCHAR
+    correo : VARCHAR <<UNIQUE>>
+    contraseña : VARCHAR
+    rol : ENUM
+    fecha_registro : TIMESTAMP
+    estado : ENUM
+}
+
+entity "Terapeutas" as T {
+    + id_terapeuta : INT <<PK>>
+    --
+    id_usuario : INT <<FK>>
+    especialidad : VARCHAR
+    horarios_disponibles : TEXT
+    pacientes_asignados : INT
+}
+
+entity "Pacientes" as P {
+    + id_paciente : INT <<PK>>
+    --
+    id_usuario : INT <<FK>>
+    edad : INT
+    direccion : TEXT
+    cedula : VARCHAR <<UNIQUE>>
+    correo : VARCHAR
+    tipo_atencion : VARCHAR
+    estado_paciente : ENUM
+}
+
+entity "Citas" as C {
+    + id_cita : INT <<PK>>
+    --
+    id_paciente : INT <<FK>>
+    id_terapeuta : INT <<FK>>
+    fecha_hora : TIMESTAMP
+    estado_cita : ENUM
+    motivo_cancelacion : TEXT
+}
+
+entity "Lista de Espera" as L {
+    + id_lista : INT <<PK>>
+    --
+    id_paciente : INT <<FK>>
+    id_terapeuta : INT <<FK>>
+    fecha_solicitud : TIMESTAMP
+    prioridad : ENUM
+    estado : ENUM
+}
+
+entity "Notificaciones" as N {
+    + id_notificacion : INT <<PK>>
+    --
+    id_usuario : INT <<FK>>
+    tipo : ENUM
+    mensaje : TEXT
+    fecha_envio : TIMESTAMP
+    estado_visto : ENUM
+}
+
+entity "Reportes" as R {
+    + id_reporte : INT <<PK>>
+    --
+    id_admin : INT <<FK>>
+    tipo_reporte : ENUM
+    fecha_generacion : TIMESTAMP
+    datos_json : JSON
+}
+
+entity "Historial Estados Pacientes" as H {
+    + id_historial : INT <<PK>>
+    --
+    id_paciente : INT <<FK>>
+    fecha_cambio : TIMESTAMP
+    estado_anterior : ENUM
+    estado_nuevo : ENUM
+    motivo_cambio : TEXT
+}
+
+entity "Administradores" as A {
+    + id_admin : INT <<PK>>
+    --
+    id_usuario : INT <<FK>>
+}
+
+'Uso de relaciones
+U ||--o{
+T : "1 a 1"
+U ||--o{
+P : "1 a 1"
+U ||--o{
+A : "1 a 1"
+U ||--o{
+N : "1 a M"
+U ||--o{
+R : "1 a M"
+P ||--o{
+C : "1 a M"
+T ||--o{
+C : "1 a M"
+P ||--o{
+L : "1 a M"
+T ||--o{
+L : "1 a M"
+P ||--o{
+H : "1 a M"
+
+@enduml

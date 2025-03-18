@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lista de Espera</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <!-- Bootstrap Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+  />
+  <style>
+    body {
+      background: #f8fafc;
+      min-height: 100vh;
+    }
+    .main-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    .sidebar {
+      width: 250px;
+      min-height: 100vh;
+      position: fixed;
+      left: -250px;
+      transition: all 0.3s;
+      background: #0d6efd;
+      z-index: 1000;
+    }
+    .sidebar.active {
+      left: 0;
+    }
+    .main-content {
+      transition: margin-left 0.3s;
+      padding: 20px;
+    }
+    .main-content.active {
+      margin-left: 250px;
+    }
+    .citas-container {
+      border-left: 3px solid #0d6efd;
+      padding-left: 1rem;
+      margin: 0.5rem 0;
+    }
+    .list-group-item {
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    .list-group-item:hover {
+      transform: translateX(5px);
+      background-color: #f8f9fa;
+    }
+    .contador-tiempo {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-top: 0.3rem;
+    }
+    .badge-estado {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+    }
+    .navbar-maestra {
+      background: #2563eb !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .nav-link {
+      transition: all 0.3s !important;
+    }
+    .nav-link:hover {
+      transform: translateY(-2px);
+    }
+    /* Spinner de carga */
+    #loadingSpinner {
+      display: none;
+      text-align: center;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body class="py-4">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-maestra">
+    <div class="container-fluid">
+      <a class="navbar-brand">
+        <i class="bi bi-heart-pulse me-2"></i>Consultorio Psicológico
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <!-- Lista de Espera: visible a ambos roles -->
+          <li class="nav-item">
+            <a class="nav-link active" href="Lista_de_espera.html">
+              <i class="bi bi-list-task me-1"></i>Lista de Espera
+            </a>
+          </li>
+          <!-- Reportes: visible solo a terapeuta (ejemplo) -->
+          <li class="nav-item">
+            <a class="nav-link" href="reportes.html">
+              <i class="bi bi-file-text me-1"></i>Reportes
+            </a>
+          </li>
+          <!-- Nuevo Paciente: visible solo a admin -->
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="ingresar_pacientes.html">
+              <i class="bi bi-person-plus me-1"></i>Nuevo Paciente
+            </a>
+          </li>
+          <!-- Nuevo Terapeuta: visible solo a admin -->
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="ingresar_terapeuta.html">
+              <i class="bi bi-briefcase me-1"></i>Nuevo Terapeuta
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <button class="btn btn-danger" onclick="cerrarSesion()">Cerrar Sesión</button>
+  </nav>
+
+  <!-- Sidebar -->
+  <nav class="sidebar bg-primary text-white">
+    <div class="p-3">
+      <h4>Consultorio Psicológico</h4>
+      <button class="btn btn-light btn-sm mb-3" onclick="toggleSidebar()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+      <ul class="nav flex-column">
+        <li class="nav-item">
+          <a class="nav-link text-white" href="Lista_de_espera.html">Lista de Espera</a>
+        </li>
+        <li class="nav-item terapeuta-only">
+          <a class="nav-link text-white" href="reportes.html">Reportes</a>
+        </li>
+        <li class="nav-item admin-only">
+          <a class="nav-link text-white" href="ingresar_pacientes.html">Registrar Pacientes</a>
+        </li>
+        <li class="nav-item admin-only">
+          <a class="nav-link text-white" href="ingresar_terapeuta.html">Registrar Terapeutas</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Contenido principal -->
+  <div class="main-content">
+    <div class="container">
+      <div class="main-container p-4 mb-4">
+        <!-- Barra de búsqueda -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 class="text-primary fw-bold">Lista de Espera</h1>
+          <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text" id="search-icon"><i class="bi bi-search"></i></span>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Buscar..."
+              aria-label="Buscar"
+              aria-describedby="search-icon"
+              onkeyup="filtrarLista(this.value)"
+            />
+          </div>
+        </div>
+
+        <!-- Spinner de carga -->
+        <div id="loadingSpinner">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+        </div>
+
+        <!-- Contenedor de la lista de espera -->
+        <div class="list-group" id="listaEspera"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de citas -->
+  <div class="modal fade" id="citasModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Agendar Nueva Cita</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label>Terapeuta:</label>
+            <select id="selectTerapeuta" class="form-select"></select>
+          </div>
+          <div class="mb-3">
+            <label>Fecha y Hora:</label>
+            <input type="datetime-local" id="fechaCita" class="form-control" />
+          </div>
+          <button class="btn btn-primary w-100" onclick="agregarCita()">
+            <i class="bi bi-plus-lg me-2"></i> Agregar Cita
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+  ></script>
+
+  <script>
+    // =====================
+    // 1. Autenticación & Roles
+    // =====================
+    function checkAuth() {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) {
+        // No hay usuario => redirigir al login
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Función actualizada según la corrección solicitada
+    function toggleMenuByRole() {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) return;
+
+      document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = user.role === 'admin' ? 'block' : 'none';
+      });
+      
+      document.querySelectorAll('.terapeuta-only').forEach(el => {
+        el.style.display = user.role === 'terapeuta' ? 'block' : 'none';
+      });
+    }
+
+    function cerrarSesion() {
+      localStorage.removeItem('user');
+      window.location.href = 'index.html';
+    }
+
+    // =====================
+    // 2. Sidebar toggle
+    // =====================
+    function toggleSidebar() {
+      document.querySelector(".sidebar").classList.toggle("active");
+      document.querySelector(".main-content").classList.toggle("active");
+    }
+
+    // =====================
+    // 3. Spinner
+    // =====================
+    function mostrarSpinner() {
+      document.getElementById("loadingSpinner").style.display = "block";
+    }
+    function ocultarSpinner() {
+      document.getElementById("loadingSpinner").style.display = "none";
+    }
+
+    // =====================
+    // 4. Lista de Espera
+    // =====================
+    let listaCompleta = []; // Guardamos todos los pacientes
+
+    async function cargarListaEspera() {
+      try {
+        mostrarSpinner();
+        const response = await fetch("http://localhost:5001/api/lista-espera");
+        
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        listaCompleta = data;
+        renderizarLista(data);
+        
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error al cargar lista: " + error.message);
+      } finally {
+        ocultarSpinner();
+      }
+    }
+
+    function filtrarLista(texto) {
+      texto = texto.toLowerCase().trim();
+      const filtrados = listaCompleta.filter((paciente) => {
+        const nombrePac = (paciente.paciente_nombre + " " + paciente.paciente_apellido).toLowerCase();
+        const nombreTer = (paciente.terapeuta_nombre + " " + paciente.terapeuta_apellido).toLowerCase();
+        return nombrePac.includes(texto) || nombreTer.includes(texto);
+      });
+      renderizarLista(filtrados);
+    }
+
+    function renderizarLista(pacientes) {
+      const contenedor = document.getElementById("listaEspera");
+      contenedor.innerHTML = pacientes.map(pac => `
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center">
+            <div style="flex-grow: 1;">
+              <h5>${pac.paciente_nombre} ${pac.paciente_apellido}</h5>
+              <small class="text-muted">
+                Terapeuta: ${pac.terapeuta_nombre} ${pac.terapeuta_apellido}
+              </small>
+              <div class="citas-container" id="citas-${pac.id_lista}" style="display: none;"></div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-success" onclick="abrirModalCita(${pac.id_lista})">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+              <button class="btn btn-sm btn-primary" onclick="toggleCitas(${pac.id_lista})">
+                <i class="bi bi-calendar3"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // =====================
+    // 5. Citas
+    // =====================
+    let pacienteActual = null;
+
+    async function abrirModalCita(listaId) {
+      try {
+        const response = await fetch(`/api/lista-espera/${listaId}`);
+        if (!response.ok) throw new Error("Error al obtener paciente");
+        const data = await response.json();
+        pacienteActual = data.paciente_id;
+
+        const respTerapeutas = await fetch("/api/terapeutas");
+        if (!respTerapeutas.ok) throw new Error("Error al obtener terapeutas");
+        const terapeutas = await respTerapeutas.json();
+
+        const select = document.getElementById("selectTerapeuta");
+        select.innerHTML = terapeutas.map(t => `
+          <option value="${t.id_terapeuta}">${t.nombre} ${t.apellido}</option>
+        `).join("");
+
+        new bootstrap.Modal(document.getElementById("citasModal")).show();
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error al cargar datos para la cita: " + error.message);
+      }
+    }
+
+    async function agregarCita() {
+      const fechaInput = document.getElementById("fechaCita");
+      const terapeutaSelect = document.getElementById("selectTerapeuta");
+
+      if (!fechaInput.value || !terapeutaSelect.value) {
+        alert("Complete todos los campos");
+        return;
+      }
+
+      try {
+        mostrarSpinner();
+        await fetch("/api/citas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paciente_id: pacienteActual,
+            terapeuta_id: terapeutaSelect.value,
+            fecha_hora: fechaInput.value,
+            duracion: "1 hour",
+          }),
+        });
+        bootstrap.Modal.getInstance(document.getElementById("citasModal")).hide();
+        cargarListaEspera();
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error al agregar cita: " + error.message);
+      } finally {
+        ocultarSpinner();
+      }
+    }
+
+    async function toggleCitas(listaId) {
+      const contenedor = document.getElementById(`citas-${listaId}`);
+      if (contenedor.style.display === "none") {
+        try {
+          mostrarSpinner();
+          const response = await fetch(`/api/citas-lista/${listaId}`);
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Error al cargar citas");
+          }
+          const citas = await response.json();
+          contenedor.innerHTML = "";
+          citas.forEach(cita => {
+            const citaHTML = `
+              <div class="mt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <span class="badge ${cita.estado === "completada" ? "bg-success" : "bg-info"}">
+                      ${new Date(cita.fecha_hora).toLocaleString()} (${cita.estado})
+                    </span>
+                    ${cita.estado === "pendiente"
+                      ? `<div class="contador-tiempo" id="contador-${cita.id_cita}"></div>`
+                      : ""
+                    }
+                  </div>
+                  <div class="d-flex gap-2">
+                    ${cita.estado === "pendiente"
+                      ? `<button class="btn btn-sm btn-success" onclick="completarCita(${cita.id_cita})"><i class="bi bi-check2"></i></button>`
+                      : ""
+                    }
+                    <button class="btn btn-sm btn-danger" onclick="eliminarCita(${cita.id_cita})">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                ${cita.estado === "completada" ? `
+                  <div class="mt-2">
+                    <a href="reportes.html?cita_id=${cita.id_cita}" class="btn btn-sm btn-primary">
+                      <i class="bi bi-file-text"></i> Generar Reporte
+                    </a>
+                  </div>`
+                : ""}
+              </div>`;
+            contenedor.insertAdjacentHTML("beforeend", citaHTML);
+            if (cita.estado === "pendiente") {
+              iniciarContador(cita.id_cita, new Date(cita.fecha_hora));
+            }
+          });
+          contenedor.style.display = "block";
+        } catch (error) {
+          console.error("Error en toggleCitas:", error);
+          contenedor.innerHTML = `<div class="text-danger mt-2">${error.message}</div>`;
+        } finally {
+          ocultarSpinner();
+        }
+      } else {
+        contenedor.style.display = "none";
+      }
+    }
+
+    function iniciarContador(idCita, fechaCita) {
+      const elemento = document.getElementById(`contador-${idCita}`);
+      function actualizarContador() {
+        const ahora = new Date();
+        const diferencia = fechaCita - ahora;
+        if (diferencia < 0) {
+          elemento.innerHTML = '<span class="text-danger">Cita expirada</span>';
+          return;
+        }
+        const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+        const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+        elemento.innerHTML = `<span class="text-success"><i class="bi bi-clock"></i> ${dias}d ${horas}h ${minutos}m restantes</span>`;
+      }
+      actualizarContador();
+      setInterval(actualizarContador, 60000);
+    }
+
+    async function completarCita(idCita) {
+      if (!confirm("¿Marcar cita como completada?")) return;
+      try {
+        mostrarSpinner();
+        await fetch(`/api/citas/${idCita}/completar`, { method: "PATCH" });
+        cargarListaEspera();
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error al completar cita: " + error.message);
+      } finally {
+        ocultarSpinner();
+      }
+    }
+
+    async function eliminarCita(idCita) {
+      if (!confirm("¿Eliminar cita?")) return;
+      try {
+        mostrarSpinner();
+        await fetch(`/api/citas/${idCita}`, { method: "DELETE" });
+        cargarListaEspera();
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Error al eliminar cita: " + error.message);
+      } finally {
+        ocultarSpinner();
+      }
+    }
+
+    // Al cargar la página
+    document.addEventListener("DOMContentLoaded", () => {
+      let token = localStorage.getItem("token");
+      checkAuth();
+      toggleMenuByRole();
+      cargarListaEspera();
+      if (!token) {
+        console.warn("No hay token. Redirigiendo al login...");
+        window.location.href = "index.html";  // Redirige si no hay token
+      }
+    });
+  </script>
+</body>
+</html>
