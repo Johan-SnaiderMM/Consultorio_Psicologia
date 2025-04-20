@@ -1,0 +1,30 @@
+/* Lista_de_espera.css */
+body {
+    background-image: url('/assets/Fondo.jpg');
+    background-size: cover;
+  }
+  .main-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+  /* Animación al hover sobre las tarjetas */
+  .card:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s;
+  }
+  /* Spinner centralizado */
+  #loadingSpinner {
+    display: none;
+    text-align: center;
+    margin: 1rem 0;
+  }
+  .clickable {
+    cursor: pointer;
+    text-decoration: none;
+  }
+  /* Botón para editar en el modal */
+  .btn-editar {
+    font-size: 0.9rem;
+  }
+  
