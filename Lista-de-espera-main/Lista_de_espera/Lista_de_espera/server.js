@@ -167,7 +167,7 @@ app.post("/api/pacientes", async (req, res) => {
 
     // 2) Insertar paciente
     const pacienteRes = await client.query(
-      `INSERT INTO "Pacientes"
+      `INSERT INTO Pacientes
          (nombre, apellido, cedula, edad, correo, tipo_atencion, direccion, eps, terapeuta_id)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        RETURNING *`,
@@ -186,7 +186,7 @@ app.post("/api/pacientes", async (req, res) => {
 
     // 3) Insertar en lista de espera
     await client.query(
-      `INSERT INTO "ListaEspera"
+      `INSERT INTO ListaEspera
          (paciente_id, terapeuta_id)
        VALUES ($1,$2)`,
       [
@@ -430,6 +430,22 @@ app.get("/api/lista-espera/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/lista-espera/:id", async (req, res) => {
+    try {
+      const result = await pool.query(
+        "DELETE FROM ListaEspera WHERE id_lista = $1 RETURNING *",
+        [req.params.id]
+      );
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: "Paciente no encontrado en lista de espera" });
+      }
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error al eliminar paciente:", err);
+      res.status(500).json({ error: "Error al eliminar paciente de la lista de espera" });
+    }
+  });
+
 // ========================================
 // Rutas de Citas
 // ========================================
@@ -512,9 +528,6 @@ app.patch('/api/citas/:id/completar', async (req, res) => {
       return res.status(404).json({ error: "Cita no encontrada o ya completada" });
     }
 
-    const pacienteId = citaCheck.rows[0].paciente_id;
-    console.log("Paciente a completar:", pacienteId);
-
     // 2. Marcar cita como completada
     await client.query(
       `UPDATE Citas SET estado = 'completada' WHERE id_cita = $1`,
@@ -522,12 +535,7 @@ app.patch('/api/citas/:id/completar', async (req, res) => {
     );
     console.log("Cita actualizada a completada");
 
-    // 3. Eliminar de lista de espera
-    const deleteResult = await client.query(
-      `DELETE FROM ListaEspera WHERE paciente_id = $1`,
-      [pacienteId]
-    );
-    console.log("Delete en ListaEspera, filas eliminadas:", deleteResult.rowCount);
+    // Nota: Ya no eliminamos al paciente de ListaEspera al completar la cita
 
     await client.query('COMMIT');
     res.json({ success: true });
@@ -542,6 +550,25 @@ app.patch('/api/citas/:id/completar', async (req, res) => {
     client.release();
   }
 });
+
+
+// Borrar un paciente de la lista de espera
+app.delete('/api/lista-espera/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM ListaEspera WHERE id_lista = $1 RETURNING *',
+      [req.params.id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Paciente no encontrado en lista' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error al eliminar de lista:', err);
+    res.status(500).json({ error: 'Error interno al eliminar paciente' });
+  }
+});
+
 
 app.delete("/api/citas/:id", async (req, res) => {
   const client = await pool.connect();

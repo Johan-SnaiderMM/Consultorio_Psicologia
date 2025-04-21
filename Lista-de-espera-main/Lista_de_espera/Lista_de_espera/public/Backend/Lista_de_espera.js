@@ -74,80 +74,104 @@ function checkAuth() {
     renderizarLista(filtrados);
   }
   
-  function renderizarLista(pacientes) {
-    const contenedor = document.getElementById("listaEspera");
-    contenedor.innerHTML = pacientes
-      .map((pac) => {
-        let estadoBadge = "";
-        if (pac.estado_paciente === "activo") {
-          estadoBadge = `<span class="badge bg-success">Activo</span>`;
-        } else if (pac.estado_paciente === "intermitente") {
-          estadoBadge = `<span class="badge bg-warning text-dark">Intermitente</span>`;
-        } else if (pac.estado_paciente === "pausa") {
-          estadoBadge = `<span class="badge bg-info">Pausa</span>`;
-        } else if (pac.estado_paciente === "desertado") {
-          estadoBadge = `<span class="badge bg-danger">Desertado</span>`;
-        } else if (pac.estado_paciente === "completado") {
-          estadoBadge = `<span class="badge bg-secondary">Completado</span>`;
-        }
-  
-        const selectStyle = `background-color: ${getColorForState(pac.estado_paciente)};`;
-        const disabledSelect = pac.estado_paciente === "completado" ? "disabled" : "";
-  
-        return `
-          <div class="col-12 col-md-6 col-lg-4 mb-3">
-            <div class="card h-100 shadow-sm">
-              <div class="card-body d-flex flex-column justify-content-between">
-                <div>
-                  <h5 class="card-title">
-                    <span class="clickable" data-bs-toggle="modal" data-bs-target="#modalFichaPaciente"
-                          data-paciente-id="${pac.paciente_id}"
-                          data-paciente-nombre="${pac.paciente_nombre}"
-                          data-paciente-apellido="${pac.paciente_apellido}"
-                          data-paciente-cedula="${pac.cedula || 'N/A'}"
-                          data-paciente-correo="${pac.correo || 'N/A'}"
-                          data-paciente-atencion="${pac.tipo_atencion || 'N/A'}">
-                      ${pac.paciente_nombre} ${pac.paciente_apellido}
+// Helper para obtener las clases de Bootstrap según el estado
+function getEstadoClasses(estado) {
+  switch (estado) {
+    case 'activo':       return 'bg-success';
+    case 'intermitente': return 'bg-warning text-dark';
+    case 'pausa':        return 'bg-info';
+    case 'desertado':    return 'bg-danger';
+    default:             return '';
+  }
+}
+
+function renderizarLista(pacientes) {
+  const contenedor = document.getElementById("listaEspera");
+  contenedor.innerHTML = pacientes
+    .map((pac) => {
+      const disabledSelect = pac.estado_paciente === "completado" ? "disabled" : "";
+      const estadoClases  = getEstadoClasses(pac.estado_paciente);
+
+      return `
+        <div class="col-12 col-md-6 col-lg-4 mb-3">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex flex-column justify-content-between">
+              <div>
+                <h5 class="card-title">
+                  <span class="clickable"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalFichaPaciente"
+                        data-paciente-id="${pac.paciente_id}"
+                        data-paciente-nombre="${pac.paciente_nombre}"
+                        data-paciente-apellido="${pac.paciente_apellido}"
+                        data-paciente-cedula="${pac.cedula || 'N/A'}"
+                        data-paciente-correo="${pac.correo || 'N/A'}"
+                        data-paciente-atencion="${pac.tipo_atencion || 'N/A'}">
+                    ${pac.paciente_nombre} ${pac.paciente_apellido}
+                  </span>
+                </h5>
+                <p class="card-text">
+                  <small class="text-muted">
+                    Terapeuta:
+                    <span class="clickable"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalFichaTerapeuta"
+                          data-terapeuta-id="${pac.terapeuta_id}"
+                          data-terapeuta-nombre="${pac.terapeuta_nombre}"
+                          data-terapeuta-apellido="${pac.terapeuta_apellido}">
+                      ${pac.terapeuta_nombre} ${pac.terapeuta_apellido}
                     </span>
-                    ${estadoBadge}
-                  </h5>
-                  <p class="card-text">
-                    <small class="text-muted">
-                      Terapeuta:
-                      <span class="clickable" data-bs-toggle="modal" data-bs-target="#modalFichaTerapeuta"
-                            data-terapeuta-id="${pac.terapeuta_id}"
-                            data-terapeuta-nombre="${pac.terapeuta_nombre}"
-                            data-terapeuta-apellido="${pac.terapeuta_apellido}">
-                        ${pac.terapeuta_nombre} ${pac.terapeuta_apellido}
-                      </span>
-                    </small>
-                  </p>
-                  <div class="mb-2">
-                    <label for="select-estado-${pac.paciente_id}" class="form-label">Cambiar estado:</label>
-                    <select id="select-estado-${pac.paciente_id}" class="form-select form-select-sm" style="${selectStyle}" onchange="cambiarEstadoPaciente(${pac.paciente_id}, this.value)" ${disabledSelect}>
-                      <option value="activo" ${pac.estado_paciente === "activo" ? "selected" : ""}>Activo</option>
-                      <option value="intermitente" ${pac.estado_paciente === "intermitente" ? "selected" : ""}>Intermitente</option>
-                      <option value="pausa" ${pac.estado_paciente === "pausa" ? "selected" : ""}>Pausa</option>
-                      <option value="desertado" ${pac.estado_paciente === "desertado" ? "selected" : ""}>Desertado</option>
-                    </select>
-                  </div>
+                  </small>
+                </p>
+                <div class="mb-2">
+                  <label for="select-estado-${pac.paciente_id}" class="form-label">
+                    Cambiar estado:
+                  </label>
+                  <select id="select-estado-${pac.paciente_id}"
+                          class="form-select form-select-sm ${estadoClases}"
+                          onchange="cambiarEstadoPaciente(${pac.paciente_id}, this.value)"
+                          ${disabledSelect}>
+                    <option value="activo"       ${pac.estado_paciente === "activo"       ? "selected" : ""}>
+                      Activo
+                    </option>
+                    <option value="intermitente" ${pac.estado_paciente === "intermitente" ? "selected" : ""}>
+                      Intermitente
+                    </option>
+                    <option value="pausa"        ${pac.estado_paciente === "pausa"        ? "selected" : ""}>
+                      Pausa
+                    </option>
+                    <option value="desertado"    ${pac.estado_paciente === "desertado"    ? "selected" : ""}>
+                      Desertado
+                    </option>
+                  </select>
                 </div>
-                <div class="d-flex justify-content-end gap-2">
-                  <button class="btn btn-sm btn-success" onclick="abrirModalCita(${pac.id_lista})" title="Crear cita">
-                    <i class="bi bi-plus-lg"></i>
-                  </button>
-                  <button class="btn btn-sm btn-primary" onclick="toggleCitas(${pac.id_lista})" title="Ver citas">
-                    <i class="bi bi-calendar3"></i>
-                  </button>
-                </div>
-                <div class="mt-3" id="citas-${pac.id_lista}" style="display: none;"></div>
               </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-sm btn-success"
+                        onclick="abrirModalCita(${pac.id_lista})"
+                        title="Crear cita">
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+                <button class="btn btn-sm btn-primary"
+                        onclick="toggleCitas(${pac.id_lista})"
+                        title="Ver citas">
+                  <i class="bi bi-calendar3"></i>
+                </button>
+                <button class="btn btn-sm btn-danger"
+                    onclick="eliminarPaciente(${pac.id_lista})"
+                    title="Eliminar paciente">
+                    <i class="bi bi-trash"></i>
+                  </button>
+              </div>
+              <div class="mt-3" id="citas-${pac.id_lista}" style="display: none;"></div>
             </div>
           </div>
-        `;
-      })
-      .join("");
-  }
+        </div>
+      `;
+    })
+    .join("");
+}
+
   
   // =====================
   // 4. Funciones para Citas
@@ -194,30 +218,43 @@ function checkAuth() {
   
   async function abrirModalCita(listaId) {
     try {
-      const [pacienteResponse, terapeutasResponse] = await Promise.all([
-        fetch(`http://localhost:5001/api/lista-espera/${listaId}`),
-        fetch("http://localhost:5001/api/terapeutas"),
+      // 1) Cargo simultáneamente la info del paciente y la lista de terapeutas
+      const [pacienteResp, terapeutasResp] = await Promise.all([
+        fetch(`/api/lista-espera/${listaId}`),
+        fetch('/api/terapeutas'),
       ]);
-      if (!pacienteResponse.ok) throw new Error("Error al obtener el paciente");
-      if (!terapeutasResponse.ok) throw new Error("Error al obtener terapeutas");
-      const pacienteData = await pacienteResponse.json();
-      const terapeutas = await terapeutasResponse.json();
-      pacienteActual = pacienteData.paciente_id;
-      const select = document.getElementById("selectTerapeuta");
-      select.innerHTML =
-        '<option value="" selected disabled>Seleccione un terapeuta</option>' +
-        terapeutas
-          .map(
-            (t) =>
-              `<option value="${t.id_terapeuta}">${t.nombre} ${t.apellido}</option>`
-          )
-          .join("");
-      new bootstrap.Modal(document.getElementById("citasModal")).show();
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Error al cargar datos para la cita: " + error.message);
+      if (!pacienteResp.ok) throw new Error('No pude obtener el paciente');
+      if (!terapeutasResp.ok) throw new Error('No pude obtener terapeutas');
+  
+      const pacienteData = await pacienteResp.json();
+      const terapeutas   = await terapeutasResp.json();
+      pacienteActual     = pacienteData.paciente_id;
+  
+      // 2) Construyo el <select> con placeholder + todas las opciones
+      const select = document.getElementById('selectTerapeuta');
+      const opciones = terapeutas
+        .map(t =>
+          `<option value="${t.id_terapeuta}">
+             ${t.nombre} ${t.apellido}
+           </option>`
+        )
+        .join('');
+      select.innerHTML = `
+        <option value="" disabled>Seleccione un terapeuta</option>
+        ${opciones}
+      `;
+  
+      // 3) Preselecciono el terapeuta que ya venía asignado
+      select.value = String(pacienteData.terapeuta_id);
+  
+      // 4) Muestro el modal
+      new bootstrap.Modal(document.getElementById('citasModal')).show();
+    } catch (err) {
+      console.error(err);
+      alert('Error al abrir modal de cita: ' + err.message);
     }
   }
+  
   
   async function agregarCita() {
     const fechaInput = document.getElementById("fechaCita");
@@ -268,39 +305,38 @@ function checkAuth() {
     if (contenedor.style.display === "none") {
       try {
         mostrarSpinner();
-        const response = await fetch(
-          `http://localhost:5001/api/citas-lista/${listaId}`
-        );
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Error al cargar citas");
-        }
+        const response = await fetch(`/api/citas-lista/${listaId}`);
+        if (!response.ok) throw new Error("Error al cargar citas");
         const citas = await response.json();
-        contenedor.innerHTML = "";
   
-        citas.filter(cita => cita.estado === "pendiente").forEach((cita) => {
-          const citaHTML = `
-            <div class="mt-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <span class="badge bg-info">
-                    ${new Date(cita.fecha_hora).toLocaleString()} (${cita.estado})
-                  </span>
-                  <div class="small text-muted" id="contador-${cita.id_cita}"></div>
+        contenedor.innerHTML = ""; // limpio antes de renderizar
+        citas
+          .filter(cita => cita.estado === "pendiente")
+          .forEach(cita => {
+            // Única declaración de citaHTML:
+            const citaHTML = `
+              <div class="mt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <span class="badge bg-info">
+                      ${new Date(cita.fecha_hora).toLocaleString()} (${cita.estado})
+                    </span>
+                    <div class="small text-muted" id="contador-${cita.id_cita}"></div>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-success" onclick="completarCita(${cita.id_cita})">
+                      <i class="bi bi-check2"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarCita(${cita.id_cita})">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
                 </div>
-                <div class="d-flex gap-2">
-                  <button class="btn btn-sm btn-success" onclick="completarCita(${cita.id_cita})">
-                    <i class="bi bi-check2"></i>
-                  </button>
-                  <button class="btn btn-sm btn-danger" onclick="eliminarCita(${cita.id_cita})">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>`;
-          contenedor.insertAdjacentHTML("beforeend", citaHTML);
-          iniciarContador(cita.id_cita, new Date(cita.fecha_hora));
-        });
+              </div>`;
+            contenedor.insertAdjacentHTML("beforeend", citaHTML);
+            iniciarContador(cita.id_cita, new Date(cita.fecha_hora));
+          });
+  
         contenedor.style.display = "block";
       } catch (error) {
         console.error("Error en toggleCitas:", error);
@@ -312,6 +348,7 @@ function checkAuth() {
       contenedor.style.display = "none";
     }
   }
+  
   
   function iniciarContador(idCita, fechaCita) {
     const elemento = document.getElementById(`contador-${idCita}`);
@@ -393,26 +430,49 @@ function checkAuth() {
     }
   }
   
-  function cambiarEstadoPaciente(pacienteId, nuevoEstado) {
-    fetch(`/api/pacientes/${pacienteId}/estado`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ estado: nuevoEstado }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al actualizar estado");
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Estado actualizado:", data);
-        const selectElem = document.getElementById(`select-estado-${pacienteId}`);
-        selectElem.style.backgroundColor = getColorForState(nuevoEstado.toLowerCase());
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Hubo un error al actualizar el estado");
+  async function cambiarEstadoPaciente(pacienteId, nuevoEstado) {
+    try {
+      const res = await fetch(`/api/pacientes/${pacienteId}/estado`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
       });
+      if (!res.ok) throw new Error("Error al actualizar estado");
+  
+      // Actualizo clases en el select:
+      const select = document.getElementById(`select-estado-${pacienteId}`);
+      // Quito todas las posibles bg-*
+      select.classList.remove('bg-success','bg-warning','text-dark','bg-info','bg-danger');
+      // Y añado la que toca
+      const clases = getEstadoClasses(nuevoEstado).split(' ');
+      select.classList.add(...clases);
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un error al actualizar el estado");
+    }
   }
+
+  // Elimina un paciente de la lista de espera
+async function eliminarPaciente(idLista) {
+  if (!confirm('¿Seguro que deseas eliminar a este paciente de la lista de espera?')) return;
+  try {
+    mostrarSpinner();
+    const res = await fetch(`/api/lista-espera/${idLista}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Error al eliminar paciente');
+    }
+    // Recargar la lista
+    cargarListaEspera();
+  } catch (error) {
+    console.error('Error al eliminar paciente:', error);
+    alert(`❌ ${error.message}`);
+  } finally {
+    ocultarSpinner();
+  }
+}
+
+  
   
   function getColorForState(estado) {
     const colores = {

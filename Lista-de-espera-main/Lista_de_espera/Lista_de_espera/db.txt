@@ -4,8 +4,6 @@
 	-- (2) Crear la BD
 	CREATE DATABASE DBconsultoriopsi;
 	
-	\c DBconsultoriopsi
-	\d "Pacientes"
 	------------------------------------------------------------------------
 	-- 1. ELIMINAR TABLAS Y TIPOS (si ya existen)
 	------------------------------------------------------------------------
@@ -21,9 +19,6 @@
 	DROP TYPE IF EXISTS estado_lista_type CASCADE;
 	DROP TYPE IF EXISTS estado_paciente_type CASCADE; 
 
-	SELECT id_paciente, cedula, correo
-FROM Pacientes
-WHERE cedula = '11111111111' OR correo = 'weipmv@jne.com';
 
 	------------------------------------------------------------------------
 	-- 2. CREAR TIPOS ENUM
@@ -51,9 +46,6 @@ WHERE cedula = '11111111111' OR correo = 'weipmv@jne.com';
 	    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);
 	select * from Terapeutas;
-SELECT column_name, column_default 
-FROM information_schema.columns 
-WHERE table_name = 'pacientes' AND column_name = 'estado_paciente';
 	------------------------------------------------------------------------
 	-- 5. TABLA PACIENTES (usa ENUM en "estado")
 	------------------------------------------------------------------------
@@ -72,10 +64,11 @@ WHERE table_name = 'pacientes' AND column_name = 'estado_paciente';
 	    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);
 	
-	
-	
-	ALTER TABLE Pacientes 
-  ADD COLUMN estado_paciente estado_paciente_type DEFAULT 'activo';
+	INSERT INTO terapeutas (nombre, apellido, correo, especialidad)
+VALUES ('Terapeuta', 'Uno', 'terapeuta1@email.com', 'Psicología');
+
+	INSERT INTO pacientes (nombre, apellido, cedula, correo, tipo_atencion, edad, eps, direccion, terapeuta_id)
+VALUES ('Juan', 'Perez', '123456', 'juan.perez@email.com', 'Individual', 30, 'EPS1', 'Calle Falsa 123', 1);
 
 	select * from Pacientes;
 	delete from Pacientes;
@@ -110,11 +103,6 @@ WHERE table_name = 'pacientes' AND column_name = 'estado_paciente';
 	    tipo_atencion VARCHAR(50) 
 	);
 	
-SELECT COUNT(*) FROM Citas 
-WHERE paciente_id = $1 
-AND estado = 'pendiente'
-	select * from Citas;
-	delete from citas;
 	------------------------------------------------------------------------
 	-- 8. TABLA LISTA DE ESPERA
 	------------------------------------------------------------------------
