@@ -2,9 +2,7 @@
 const { jsPDF } = window.jspdf;
 let citaActual = null;
 
-// ==============================================
 // Funciones de Utilidad
-// ==============================================
 const mostrarSpinner = () => document.getElementById('loadingSpinner').style.display = 'block';
 const ocultarSpinner = () => document.getElementById('loadingSpinner').style.display = 'none';
 
@@ -21,9 +19,7 @@ const mostrarError = (mensaje) => {
 
 const limpiarError = () => document.getElementById('error-message').style.display = 'none';
 
-// ==============================================
 // Autenticación y Roles
-// ==============================================
 const verificarAutenticacion = () => {
     const usuario = JSON.parse(localStorage.getItem('user'));
     if (!usuario) {
@@ -40,19 +36,14 @@ const actualizarVistaPorRol = () => {
     });
 };
 
-// ==============================================
 // Manejo de Citas
-// ==============================================
 const cargarCitasCompletadas = async () => {
     try {
         mostrarSpinner();
         const respuesta = await fetch('/api/citas-completadas');
-        
         if (!respuesta.ok) throw new Error(`Error ${respuesta.status}: ${respuesta.statusText}`);
-
         const citas = await respuesta.json();
         const selector = document.getElementById('selectCita');
-        
         selector.innerHTML = citas.length > 0 
             ? citas.map(cita => `
                 <option value="${cita.id_cita}">
@@ -61,7 +52,6 @@ const cargarCitasCompletadas = async () => {
                 </option>
               `).join('')
             : '<option value="">No hay citas completadas</option>';
-
     } catch (error) {
         mostrarError(`Error al cargar citas: ${error.message}`);
     } finally {
@@ -75,24 +65,19 @@ const cargarDetallesCita = async (idCita) => {
         console.error('Elemento #ticketReporte no encontrado');
         return;
     }
-
     try {
         if (!idCita) {
             ticket.style.display = 'none';
             return;
         }
-
         mostrarSpinner();
         limpiarError();
-        
         const respuesta = await fetch(`/api/citas/${idCita}`);
         if (!respuesta.ok) throw new Error(await respuesta.text());
-        
         citaActual = await respuesta.json();
         validarDatosCita(citaActual);
         actualizarInterfazCita();
         ticket.style.display = 'block';
-
     } catch (error) {
         ticket.style.display = 'none';
         mostrarError(`Error al cargar cita: ${error.message}`);
@@ -102,19 +87,13 @@ const cargarDetallesCita = async (idCita) => {
 };
 
 const validarDatosCita = (cita) => {
-    const camposRequeridos = [
-        'paciente_nombre', 'terapeuta_nombre', 
-        'fecha_hora', 'tipo_atencion'
-    ];
-    
-    camposRequeridos.forEach(campo => {
+    ['paciente_nombre', 'terapeuta_nombre', 'fecha_hora', 'tipo_atencion']
+      .forEach(campo => {
         if (!cita[campo]) throw new Error(`Dato faltante: ${campo}`);
     });
 };
 
-// ==============================================
 // Actualización de UI
-// ==============================================
 const actualizarInterfazCita = () => {
     const estadoElemento = document.querySelector('#ticketReporte .badge-estado');
     if (!estadoElemento) {
@@ -124,7 +103,7 @@ const actualizarInterfazCita = () => {
 
     // Estado del paciente
     const estado = citaActual.estado_paciente || 'activo';
-    estadoElemento.className = `badge bg-${obtenerColorEstado(estado)}`;
+    estadoElemento.className = `badge-estado badge bg-${obtenerColorEstado(estado)}`;
     estadoElemento.textContent = estado.toUpperCase();
 
     // Datos del paciente
@@ -155,27 +134,19 @@ const actualizarInterfazCita = () => {
         `Generado el: ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}`;
 };
 
-const obtenerColorEstado = (estado) => {
-    const estados = {
-        activo: 'success',
-        intermitente: 'warning',
-        pausa: 'info',
-        desertado: 'danger'
-    };
-    return estados[estado.toLowerCase()] || 'secondary';
-};
+const obtenerColorEstado = (estado) => ({
+    activo: 'success',
+    intermitente: 'warning',
+    pausa: 'info',
+    desertado: 'danger'
+}[estado.toLowerCase()] || 'secondary');
 
-// ==============================================
 // Generación de PDF
-// ==============================================
 const generarPDF = () => {
     if (!citaActual) return mostrarError('Seleccione una cita para generar el reporte');
-
     try {
         const doc = new jsPDF();
         let yPos = 20;
-
-        // Cabecera
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
         doc.text('Reporte de Consulta Psicológica', 20, yPos);
@@ -189,71 +160,52 @@ const generarPDF = () => {
         doc.setFont('helvetica', 'bold');
         doc.text('Datos del Paciente:', 20, yPos);
         yPos += 10;
-        
-        const datosPaciente = [
+        [
             `Nombre: ${citaActual.paciente_nombre} ${citaActual.paciente_apellido}`,
             `Edad: ${citaActual.edad || 'N/A'}`,
             `Cedula: ${citaActual.cedula || 'N/A'}`,
             `Dirección: ${citaActual.direccion || 'N/A'}`,
             `EPS: ${citaActual.eps || 'N/A'}`,
             `Estado: ${citaActual.estado_paciente.toUpperCase() || 'N/A'}`
-        ];
-        
-        datosPaciente.forEach(linea => {
+        ].forEach(linea => {
             doc.setFont('helvetica', 'normal');
             doc.text(linea, 25, yPos);
             yPos += 10;
         });
-
         yPos += 15;
 
-        // Datos de la consulta
+        // Detalles de la consulta
         doc.setFont('helvetica', 'bold');
         doc.text('Detalles de la Consulta:', 20, yPos);
         yPos += 10;
-        
-        const datosConsulta = [
+        [
             `Fecha: ${new Date(citaActual.fecha_hora).toLocaleDateString('es-ES', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            })}`,
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit' })}`,
             `Terapeuta: ${citaActual.terapeuta_nombre} ${citaActual.terapeuta_apellido}`,
             `Duración: 1 hora`,
             `Tipo de atención: ${citaActual.tipo_atencion}`
-        ];
-
-        datosConsulta.forEach(linea => {
+        ].forEach(linea => {
             doc.text(linea, 25, yPos);
             yPos += 10;
         });
 
-        // Guardar PDF
-        const nombreArchivo = `Reporte_${citaActual.paciente_nombre}_${citaActual.cedula}.pdf`
+        const nombreArchivo = `Reporte_${citaActual.paciente_nombre}_${citaActual.cedula}`
             .replace(/\s+/g, '_')
-            .toLowerCase();
+            .toLowerCase() + '.pdf';
         doc.save(nombreArchivo);
-
     } catch (error) {
         mostrarError(`Error al generar PDF: ${error.message}`);
     }
 };
 
-// ==============================================
 // Inicialización
-// ==============================================
 document.addEventListener('DOMContentLoaded', () => {
     if (!verificarAutenticacion()) return;
-    
     actualizarVistaPorRol();
     cargarCitasCompletadas();
-    
-    document.getElementById('selectCita').addEventListener('change', (e) => {
-        cargarDetallesCita(e.target.value);
-    });
+    document.getElementById('selectCita')
+            .addEventListener('change', e => cargarDetallesCita(e.target.value));
 });
 
 window.cerrarSesion = () => {

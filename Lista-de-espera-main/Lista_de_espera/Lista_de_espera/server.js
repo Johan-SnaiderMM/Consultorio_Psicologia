@@ -59,9 +59,9 @@ app.post("/api/ing-usuarios", async (req, res) => {
   }
 });
 
-// ========================================
+
 // Rutas de Terapeutas
-// ========================================
+
 app.get("/api/terapeutas", async (req, res) => {
   try {
     const result = await pool.query(
@@ -100,9 +100,8 @@ app.post("/api/terapeutas", async (req, res) => {
   }
 });
 
-// ========================================
 // Rutas de Pacientes
-// ========================================
+
 app.get("/api/pacientes", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM Pacientes ORDER BY id_paciente DESC");
@@ -135,7 +134,7 @@ app.post("/api/pacientes", async (req, res) => {
     .filter(([, v]) => !v)
     .map(([k]) => k);
   
-  if (terapeuta_id <= 0) { // ✅ `faltantes` ya está declarada
+  if (terapeuta_id <= 0) { // ✓ `faltantes` ya está declarada
     faltantes.push('terapeuta_id');
   }
 
@@ -381,9 +380,9 @@ app.put("/api/pacientes/:id/estado", async (req, res) => {
   }
 });
 
-// ========================================
+
 // Rutas de Lista de Espera
-// ========================================
+
 app.get("/api/lista-espera", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -446,9 +445,9 @@ app.delete("/api/lista-espera/:id", async (req, res) => {
     }
   });
 
-// ========================================
+
 // Rutas de Citas
-// ========================================
+
 app.post("/api/citas", async (req, res) => {
   const { paciente_id, terapeuta_id, fecha_hora, duracion } = req.body;
   try {
@@ -548,6 +547,23 @@ app.patch('/api/citas/:id/completar', async (req, res) => {
     });
   } finally {
     client.release();
+  }
+});
+
+// Eliminar una cita sin tocar pacientes ni lista de espera
+app.delete('/api/citas/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'DELETE FROM Citas WHERE id_cita = $1 RETURNING *',
+      [req.params.id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error al eliminar cita:', err);
+    res.status(500).json({ error: 'Error al eliminar cita' });
   }
 });
 
@@ -783,9 +799,9 @@ app.get("/api/reportes/:cita_id", async (req, res) => {
   }
 });
 
-// ========================================
+
 // Ruta para login con Google
-// ========================================
+
 app.post("/api/login-google", async (req, res) => {
   try {
     const { tokenId } = req.body;

@@ -23,9 +23,7 @@ function checkAuth() {
     window.location.href = "index.html";
   }
   
-  // =====================
   // 2. Spinner de carga
-  // =====================
   function mostrarSpinner() {
     document.getElementById("loadingSpinner").style.display = "block";
   }
@@ -33,9 +31,7 @@ function checkAuth() {
     document.getElementById("loadingSpinner").style.display = "none";
   }
   
-  // =====================
   // 3. Lista de Espera (Carga y Renderizado)
-  // =====================
   let listaCompleta = [];
   async function cargarListaEspera() {
     try {
@@ -173,9 +169,7 @@ function renderizarLista(pacientes) {
 }
 
   
-  // =====================
   // 4. Funciones para Citas
-  // =====================
 
   async function completarCita(idCita) {
     if (!confirm("¿Está seguro de marcar esta cita como completada?\nSe generará un reporte automático.")) {
@@ -405,7 +399,7 @@ function renderizarLista(pacientes) {
   
     } catch (error) {
       console.error('Error al completar cita:', error);
-      alert(`❌ Error: ${error.message}`);
+      alert(`X Error: ${error.message}`);
     } finally {
       ocultarSpinner();
     }
@@ -413,22 +407,29 @@ function renderizarLista(pacientes) {
   
   async function eliminarCita(id) {
     if (!confirm("¿Seguro que deseas eliminar esta cita?")) return;
+  
     try {
-      const response = await fetch(
-        `http://localhost:5001/api/citas/${id}`,
-        { method: "DELETE" }
-      );
+      mostrarSpinner();
+  
+      const response = await fetch(`http://localhost:5001/api/citas/${id}`, {
+        method: 'DELETE'
+      });
+  
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Error ${response.status}: ${errorText}`);
       }
+  
       alert("Cita eliminada con éxito");
       cargarListaEspera();
     } catch (error) {
       console.error("Error al eliminar cita:", error);
       alert("Error al eliminar cita: " + error.message);
+    } finally {
+      ocultarSpinner();
     }
   }
+  
   
   async function cambiarEstadoPaciente(pacienteId, nuevoEstado) {
     try {
@@ -485,9 +486,7 @@ async function eliminarPaciente(idLista) {
     return colores[estado] || '';
   }
   
-  // =====================
   // 5. Manejo de Modales para Fichas y Edición
-  // =====================
   var modalPaciente = document.getElementById("modalFichaPaciente");
   var originalPaciente = {};
   modalPaciente.addEventListener("show.bs.modal", async function (event) {
@@ -723,9 +722,7 @@ async function eliminarPaciente(idLista) {
       }
     });
   
-  // =====================
   // 6. Inicialización de la Página
-  // =====================
   document.addEventListener("DOMContentLoaded", () => {
     checkAuth();
     toggleMenuByRole();
