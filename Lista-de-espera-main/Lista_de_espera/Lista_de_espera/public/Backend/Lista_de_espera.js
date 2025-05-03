@@ -471,9 +471,7 @@ async function eliminarPaciente(idLista) {
   } finally {
     ocultarSpinner();
   }
-}
-
-  
+}  
   
   function getColorForState(estado) {
     const colores = {

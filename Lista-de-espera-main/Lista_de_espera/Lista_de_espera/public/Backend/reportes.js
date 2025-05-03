@@ -1,6 +1,31 @@
 // reportes.js - Controlador de reportes
 const { jsPDF } = window.jspdf;
 let citaActual = null;
+let citasCompletadas = [];
+
+function actualizarSelectorCitas(lista) {
+    const selector = document.getElementById('selectCita');
+    selector.innerHTML = lista.length > 0
+        ? lista.map(cita => {
+            const fecha = new Date(cita.fecha_hora)
+                        .toLocaleDateString('es-ES');
+        return `
+            <option value="${cita.id_cita}">
+                ${fecha} – ${cita.paciente_nombre} ${cita.paciente_apellido}
+                ${cita.terapeuta_nombre} ${cita.terapeuta_apellido}
+                ${cita.tipo_atencion}
+            </option>`;
+        }).join('')
+    : '<option value="">No hay citas que coincidan</option>';
+
+    if (lista.length > 0) {
+        selector.selectedIndex = 0;
+        selector.dispatchEvent(new Event('change'));
+    } else {
+        document.getElementById('ticketReporte').style.display = 'none';
+    }
+}
+
 
 // Funciones de Utilidad
 const mostrarSpinner = () => document.getElementById('loadingSpinner').style.display = 'block';
@@ -43,21 +68,49 @@ const cargarCitasCompletadas = async () => {
         const respuesta = await fetch('/api/citas-completadas');
         if (!respuesta.ok) throw new Error(`Error ${respuesta.status}: ${respuesta.statusText}`);
         const citas = await respuesta.json();
+        citasCompletadas = citas;
+        actualizarSelectorCitas(citas);
         const selector = document.getElementById('selectCita');
+
+        // Llenamos el <select>
         selector.innerHTML = citas.length > 0 
             ? citas.map(cita => `
                 <option value="${cita.id_cita}">
-                    ${new Date(cita.fecha_hora).toLocaleDateString('es-ES')} - 
+                    ${new Date(cita.fecha_hora).toLocaleDateString('es-ES')} -
                     ${cita.paciente_nombre} ${cita.paciente_apellido}
                 </option>
-              `).join('')
+                `).join('')
             : '<option value="">No hay citas completadas</option>';
+
+        // Si hay al menos una cita, selecciona la primera y dispara el change
+        if (citas.length > 0) {
+            selector.selectedIndex = 0;
+            selector.dispatchEvent(new Event('change'));
+        }
     } catch (error) {
         mostrarError(`Error al cargar citas: ${error.message}`);
     } finally {
         ocultarSpinner();
     }
 };
+
+document.getElementById('searchReportes')
+.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    const filtradas = citasCompletadas.filter(cita => {
+    const paciente  = `${cita.paciente_nombre} ${cita.paciente_apellido}`.toLowerCase();
+    const terapeuta = `${cita.terapeuta_nombre} ${cita.terapeuta_apellido}`.toLowerCase();
+    const fecha     = new Date(cita.fecha_hora)
+                        .toLocaleDateString('es-ES')
+                        .toLowerCase();
+    const tipo      = (cita.tipo_atencion || '').toLowerCase();
+    return paciente.includes(q)
+        || terapeuta.includes(q)
+        || fecha.includes(q)
+        || tipo.includes(q);
+    });
+    actualizarSelectorCitas(filtradas);
+});
 
 const cargarDetallesCita = async (idCita) => {
     const ticket = document.getElementById('ticketReporte');
@@ -198,6 +251,54 @@ const generarPDF = () => {
         mostrarError(`Error al generar PDF: ${error.message}`);
     }
 };
+// 1) Descargar todos los reportes de este paciente
+document.getElementById('btnDescargarPaciente').addEventListener('click', async () => {
+    if (!citaActual) return mostrarError('Seleccione primero una cita');
+    try {
+        mostrarSpinner();
+        const resp = await fetch(`/api/reportes/paciente/${citaActual.paciente_id}`);
+        const reportes = await resp.json();
+        const doc = new jsPDF();
+    reportes.forEach((rep, idx) => {
+        if (idx > 0) doc.addPage();
+        doc.setFontSize(14);
+        doc.text(`Paciente: ${rep.paciente_nombre} ${rep.paciente_apellido}`, 20, 20);
+        doc.text(`Fecha: ${new Date(rep.fecha_hora).toLocaleDateString()}`, 20, 30);
+        doc.setFontSize(12);
+        doc.text(rep.contenido, 20, 40, { maxWidth: 170 });
+    });
+        doc.save(`reportes_paciente_${citaActual.paciente_id}.pdf`);
+    } catch (err) {
+        mostrarError(`Error: ${err.message}`);
+    } finally {
+        ocultarSpinner();
+    }
+});
+
+  // 2) Descargar todos los reportes del sistema
+document.getElementById('btnDescargarTodos').addEventListener('click', async () => {
+    try {
+        mostrarSpinner();
+        const resp = await fetch('/api/reportes');
+        const reportes = await resp.json();
+        const doc = new jsPDF();
+        reportes.forEach((rep, idx) => {
+        if (idx > 0) doc.addPage();
+        doc.setFontSize(16);
+        doc.text(`Paciente: ${rep.paciente_nombre} ${rep.paciente_apellido}`, 20, 20);
+        doc.setFontSize(14);
+        doc.text(`Fecha: ${new Date(rep.fecha_hora).toLocaleDateString()}`, 20, 30);
+        doc.setFontSize(12);
+        doc.text(rep.contenido, 20, 40, { maxWidth: 170 });
+    });
+        doc.save('todos_reportes.pdf');
+    } catch (err) {
+        mostrarError(`Error: ${err.message}`);
+    } finally {
+        ocultarSpinner();
+    }
+});
+
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {

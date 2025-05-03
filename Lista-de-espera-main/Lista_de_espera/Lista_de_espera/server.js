@@ -567,7 +567,6 @@ app.delete('/api/citas/:id', async (req, res) => {
   }
 });
 
-
 // Borrar un paciente de la lista de espera
 app.delete('/api/lista-espera/:id', async (req, res) => {
   try {
@@ -584,7 +583,6 @@ app.delete('/api/lista-espera/:id', async (req, res) => {
     res.status(500).json({ error: 'Error interno al eliminar paciente' });
   }
 });
-
 
 app.delete("/api/citas/:id", async (req, res) => {
   const client = await pool.connect();
@@ -623,11 +621,11 @@ app.get("/api/citas-lista/:id", async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT c.*, 
+      SELECT c.*,
         p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
         t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido
       FROM Citas c
-      JOIN ListaEspera le ON c.paciente_id = le.paciente_id 
+      JOIN ListaEspera le ON c.paciente_id = le.paciente_id
         AND c.terapeuta_id = le.terapeuta_id
       JOIN Pacientes p ON c.paciente_id = p.id_paciente
       JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
@@ -646,10 +644,10 @@ app.get("/api/citas-lista/:id", async (req, res) => {
 app.get("/api/citas-completadas", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT 
+      SELECT
         c.id_cita,
         c.fecha_hora,
-        p.nombre AS paciente_nombre, 
+        p.nombre AS paciente_nombre,
         p.apellido AS paciente_apellido,
         t.nombre AS terapeuta_nombre,
         t.apellido AS terapeuta_apellido,
@@ -672,8 +670,10 @@ app.get("/api/citas/:id", async (req, res) => {
   try {
     const result = await pool.query(
       `
-      SELECT 
+      SELECT
         c.id_cita,
+        c.paciente_id,
+        c.terapeuta_id,
         c.fecha_hora,
         c.duracion,
         c.estado AS estado_cita,
@@ -705,7 +705,6 @@ app.get("/api/citas/:id", async (req, res) => {
     res.status(500).json({ error: "Error interno al recuperar la cita" });
   }
 });
-
 
 // Ruta para guardar (crear o actualizar) reportes (Upsert)
 app.post("/api/reportes/save", async (req, res) => {
@@ -771,12 +770,12 @@ app.get("/api/reportes/:cita_id", async (req, res) => {
     const result = await pool.query(
       `
       SELECT r.id_reporte,
-             r.cita_id,
-             r.contenido,
-             r.editor, 
-             r.creado_en,
-             c.duracion::text AS duracion,
-             p.estado_paciente
+            r.cita_id,
+            r.contenido,
+            r.editor,
+            r.creado_en,
+            c.duracion::text AS duracion,
+            p.estado_paciente
       FROM Reportes r
       JOIN Citas c ON r.cita_id = c.id_cita
       JOIN Pacientes p ON c.paciente_id = p.id_paciente
@@ -798,6 +797,53 @@ app.get("/api/reportes/:cita_id", async (req, res) => {
       .json({ error: "Error al obtener reporte", detalle: err.message });
   }
 });
+
+// 1. Todos los reportes de un mismo paciente
+app.get('/api/reportes/paciente/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT 
+        r.contenido, 
+        c.fecha_hora, 
+        p.id_paciente, p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+        t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido
+      FROM Reportes r
+      JOIN Citas c ON r.cita_id = c.id_cita
+      JOIN Pacientes p ON c.paciente_id = p.id_paciente
+      JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
+      WHERE p.id_paciente = $1
+      ORDER BY c.fecha_hora;
+    `, [id]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener reportes de paciente' });
+  }
+});
+
+// 2. Todos los reportes del sistema
+app.get('/api/reportes', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        r.contenido,
+        c.fecha_hora,
+        p.id_paciente, p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
+        t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido
+      FROM Reportes r
+      JOIN Citas c ON r.cita_id = c.id_cita
+      JOIN Pacientes p ON c.paciente_id = p.id_paciente
+      JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
+      ORDER BY c.fecha_hora;
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener todos los reportes' });
+  }
+});
+
 
 
 // Ruta para login con Google
