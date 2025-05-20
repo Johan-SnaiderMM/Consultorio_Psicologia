@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login Consultorio Psicológico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fuentes y estilos -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Mulish&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="icon" type="image/png" href="./assets/psicologia.png" />
+  <link rel="stylesheet" href="./Frontend/index.css" />
+
+  <!-- Google Identity Services - Carga controlada -->
+  <script>
+    function handleGoogleLoaded() {
+      document.dispatchEvent(new Event('google-loaded'));
+    }
+  </script>
+  <script 
+    src="https://accounts.google.com/gsi/client" 
+    onload="handleGoogleLoaded()"
+    async 
+    defer>
+  </script>
+</head>
+
+<body style="background-image: url('assets/Fondo.jpg'); background-size: cover; background-position: center; background-attachment: fixed;">
+
+  <!-- Spinner de carga -->
+  <div
+    id="loadingSpinner"
+    style="display: none;"
+    role="alert"
+    aria-live="assertive"
+  >
+    <div class="loading-bar"></div>
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <main class="form-wrapper">
+    <section class="form-side">
+      <a title="Logo">
+        <img
+          src="./assets/Logo.png"
+          class="logo"
+          alt="Logo del Consultorio Psicológico"
+        />
+      </a>
+
+      <!-- Contenedor de error -->
+      <div id="error-message" role="alert" aria-live="assertive"></div>
+
+      <form class="my-form">
+        <div class="form-welcome-row">
+          <h1>Iniciar sesión</h1>
+        </div>
+
+        <!-- Botón de Google -->
+        <div class="socials-row">
+          <div id="buttonDiv"></div>
+        </div>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span style="color: black; font-weight: bold; font-size: 1.2em;">
+            ಠ_ಠ
+          </span>
+          <div class="divider-line"></div>
+        </div>
+
+        <p>
+          Bienvenidos a la lista de espera del consultorio de psicología.
+        </p>
+      </form>
+    </section>
+
+    <aside class="info-side">
+      <img
+        src="./assets/consultorio.png"
+        alt="Imagen del consultorio"
+        class="mockup"
+      />
+    </aside>
+  </main>
+
+  <!-- Script principal -->
+  <script src="script.js" defer></script>
+</body>
+</html>

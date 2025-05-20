@@ -1,0 +1,168 @@
+/* Lista_de_espera.css */
+.mi-navbar {
+  background-color: #007b99 !important;
+  height: 90px; 
+}
+
+.mi-navbar .nav-link {
+  color: #ffffff;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+#loadingSpinner {
+  display: none;
+}
+
+
+.mi-navbar .nav-link:hover {
+  transform: translateY(-3px);
+  color: #f39200; 
+}
+.letras{
+  color: #007b99 !important;
+}
+body {
+    background-image: url('/assets/Fondo.jpg');
+    background-size: cover;
+  }
+  .main-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+  /* Animación al hover sobre las tarjetas */
+  .card:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s;
+  }
+  /* Spinner centralizado */
+  #loadingSpinner {
+    display: none;
+    text-align: center;
+    margin: 1rem 0;
+  }
+  .clickable {
+    cursor: pointer;
+    text-decoration: none;
+  }
+  /* BOTONES */
+  .btn-cerrar-sesion{
+    background-color: #848585;
+    border-color: #848585;
+  }
+.btn-cerrar-sesion:hover {
+    background-color: #f39200;
+    border-color: #f39200;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #f39200;
+  }
+
+  /* Botón para editar en el modal */
+  .btn-editar{
+    color: #ffffff;
+    background-color: #848585;
+    border-color: #848585;
+  }
+.btn-editar:hover {
+  background-color: #f39200;
+  border-color: #f39200;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px #f39200;;
+  }
+  
+  .btn-cerrar{
+    background-color: #848585;
+    border-color: #848585;
+  }
+.btn-cerrar:hover {
+  background-color: #f39200;
+  border-color: #f39200;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px #f39200;;
+  }
+  .btn-guardar{
+    background-color: #007b99;
+    border-color: #007b99;
+  }
+.btn-guardar:hover {
+    background-color: #007b99;
+    border-color: #007b99;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #007b99;
+  }
+
+  .btn-cancelar{
+    background-color: red;
+    border-color: red;
+  }
+.btn-cancelar:hover {
+    background-color: red;
+    border-color: red;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px red;
+  }
+
+
+  .btn-basura{
+    background-color: red;
+    border-color: red;
+  }
+.btn-basura:hover {
+    background-color: red;
+    border-color: red;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px red;
+  }
+  .btn-calendario{
+    background-color: #007b99;
+    border-color: #007b99;
+  }
+.btn-calendario:hover {
+    background-color: #007b99;
+    border-color: #007b99;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #007b99;
+  }
+  .btn-crear-citas{
+    background-color: rgb(4, 189, 4);
+    border-color: rgb(4, 189, 4);
+  }
+.btn-crear-citas:hover {
+    background-color: rgb(4, 189, 4);
+    border-color: rgb(4, 189, 4);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgb(4, 189, 4);
+  }
+
+  .btn-agregar-cita{
+    background-color: #007b99;
+    border-color: #007b99;
+  }
+.btn-agregar-cita:hover {
+    background-color: #007b99;
+    border-color: #007b99;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #007b99;
+  }
+  
+  .btn-completada{
+    background-color: rgb(4, 189, 4);
+    border-color: rgb(4, 189, 4);
+  }
+.btn-completada:hover {
+    background-color: rgb(4, 189, 4);
+    border-color: rgb(4, 189, 4);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgb(4, 189, 4);
+  }
+  .btn-basura2{
+    background-color: red;
+    border-color: red;
+  }
+.btn-basura2:hover {
+    background-color: red;
+    border-color: red;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px red;
+  }
+  

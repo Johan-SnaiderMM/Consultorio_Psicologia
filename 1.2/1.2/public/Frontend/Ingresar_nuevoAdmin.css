@@ -1,0 +1,244 @@
+:root {
+  --color-secundario: #007b99;
+}
+.mi-navbar {
+  background-color: #007b99 !important;
+  height: 90px; 
+  padding-top: 0;
+  padding-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+.mi-navbar .navbar-brand img {
+  height: 78px; /* o el tamaño que desees */
+  width: auto; /* mantiene la proporción original */
+}
+ .banner-one{
+  background-color: #007b99;
+ }
+  body {
+    background: #f8fafc url('/assets/Fondo.jpg') no-repeat center center fixed;
+    background-size: cover;
+    min-height: 100vh;
+  }
+  
+  .mi-navbar .nav-link {
+    color: #ffffff;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+  
+  .mi-navbar .nav-link:hover {
+    transform: translateY(-3px);
+    color: #f39200; 
+  }
+  
+  
+  .sidebar {
+    width: 250px;
+    min-height: 100vh;
+    position: fixed;
+    left: -250px;
+    transition: all 0.3s;
+    background: #007b99;
+    z-index: 1000;
+  }
+  
+  .sidebar.active {
+    left: 0;
+  }
+  
+  .main-content {
+    transition: margin-left 0.3s;
+    padding: 20px;
+  }
+  
+  .main-content.active {
+    margin-left: 250px;
+  }
+  
+  .formulario-contenedor {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--sombra-suave);
+  }
+  
+  .campo-formulario label {
+    font-weight: 500;
+    color: var(--color-secundario);
+    margin-bottom: 0.5rem;
+  }
+  
+  .campo-formulario input,
+  .campo-formulario select {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: border-color 0.3s;
+  }
+  
+  .campo-formulario input:focus {
+    border-color: var(--color-primario);
+    box-shadow: none;
+  }
+  
+  .menu-toggle {
+    position: fixed;
+    left: 15px;
+    top: 15px;
+    z-index: 999;
+    cursor: pointer;
+    background: white;
+    border-radius: 5px;
+    padding: 8px 12px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  /* Spinner de carga */
+  #loadingSpinner {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+  }
+  
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+  
+  /* Contenedor de errores */
+  #message-container {
+    display: none;
+  }
+  
+  #message-container .alert {
+    margin-bottom: 1rem;
+  }
+  
+  /* Estilos específicos para el formulario de terapeutas */
+  .card-header.bg-success {
+    background-color: #007b99 !important;
+  }
+  
+  .btn-success {
+    background-color: #848585;
+    border-color: #848585;
+    padding: 0.8rem 1.8rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-success:hover {
+    background-color: #f39200;
+    border-color: #f39200;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #f39200;
+  }
+  
+  .btn-limpiar{
+    background-color: #848585;
+    border-color: #848585;
+  }
+  .btn-limpiar:hover {
+    background-color: #f39200;
+    border-color: #f39200;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #f39200;
+  }
+  .btn-volver{
+    color: #f8fafc;
+    background-color: #848585;
+    border-color: #848585;
+  }
+  .btn-volver:hover {
+    background-color: #f39200;
+    border-color: #f39200;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #f39200;
+  }
+  .btn-cerrar{
+    background-color: #848585;
+    border-color: #848585;
+  }
+  .btn-cerrar:hover {
+    background-color: #f39200;
+    border-color: #f39200;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #f39200;
+  }
+  
+  .btn-basura{
+    background-color: red;
+    border-color: red;
+  }
+.btn-basura:hover {
+    background-color: red;
+    border-color: red;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px red;
+  }
+
+  .btn-editar{
+    color: #ffffff;
+    background-color: #848585;
+    border-color: #848585;
+  }
+  .btn-editar:hover {
+    background-color: #f39200;
+    border-color: #f39200;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #f39200;
+  }
+
+  .btn-cerrar{
+    background-color: #848585;
+    border-color: #848585;
+  }
+.btn-cerrar:hover {
+  background-color: #f39200;
+  border-color: #f39200;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px #f39200;;
+  }
+  .btn-guardar{
+    background-color: #007b99;
+    border-color: #007b99;
+  }
+.btn-guardar:hover {
+    background-color: #007b99;
+    border-color: #007b99;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px #007b99;
+  }
+  .btn-cancelar{
+    background-color: red;
+    border-color: red;
+  }
+.btn-cancelar:hover {
+    background-color: red;
+    border-color: red;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px red;
+  }
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .formulario-contenedor {
+      padding: 1rem;
+      margin: 1rem;
+    }
+    
+    .main-content {
+      padding: 15px;
+    }
+  }

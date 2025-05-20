@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes de Consultas | Consultorio Psicológico</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="icon" type="image/png" href="./assets/Reporte.png">
+  <link rel="stylesheet" href="./Frontend/reportes.css">
+</head>
+<body style="background-image: url('/assets/Fondo.jpg'); background-size: cover; background-position: center; background-attachment: fixed;">
+
+  <!-- Spinner de carga -->
+  <div id="loadingSpinner" role="alert" aria-live="assertive">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mi-navbar">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center">
+        <img src="./assets/unnamed.png" alt="Logo Consultorio Psicológico" class="me-2" />
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto me-0">
+          <li class="nav-item">
+            <a class="nav-link active" href="./Lista_de_espera.html">
+              <i class="bi bi-list-task me-1"></i>Lista de Espera
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./reportes.html">
+              <i class="bi bi-file-text me-1"></i>Reportes
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./ingresar_pacientes.html">
+              <i class="bi bi-person-plus me-1"></i>Nuevo Paciente
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./ingresar_terapeuta.html">
+              <i class="bi bi-briefcase me-1"></i>Nuevo Terapeuta
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./nuevoAdministador.html">
+              <i class="bi bi-briefcase me-1"></i>Nuevo Administador
+            </a>
+          </li>
+        </ul>
+      </div>
+      <button class="btn btn-danger " onclick="cerrarSesion()">
+        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+      </button>
+    </div>
+  </nav>
+
+  <!-- Contenedor principal -->
+  <div class="container mt-4">
+    <div id="error-message"></div>
+    <div class="reporte-container">
+      <!-- Buscador y selector de citas -->
+      <div class="mb-4 text-center">
+        <div class="mb-3">
+          <input type="text"
+                 id="searchReportes"
+                 class="form-control"
+                 placeholder="Buscar reporte…">
+        </div>
+        <select id="selectCita" class="form-select select-cita">
+          <option value="">Seleccione una cita completada...</option>
+        </select>
+        <small class="text-muted mt-2 d-block">Solo se muestran citas marcadas como completadas</small>
+      </div>
+
+      <!-- Ticket de reporte -->
+      <div id="ticketReporte" class="ticket" style="display: none">
+        <div class="encabezado mb-4 ">
+          <div class="d-flex justify-content-between align-items-center mb-3 ">
+            <h2 class="mb-0 letras" style="color: #007b99;">📋 Informe de Consulta</h2>
+            <!-- Aquí está el elemento que el JS necesita -->
+            <span class="badge-estado badge bg-success"></span>
+          </div>
+          <div class="texto-sutil">
+            Detalles profesionales de la sesión terapéutica
+          </div>
+        </div>
+
+        <div class="contenido-reporte">
+          <div class="mb-4">
+            <h5 class="fw-bold mb-3">📌 Datos de la Consulta</h5>
+            <div class="datos-consulta">
+              <div class="row g-3">
+                <!-- Datos del paciente -->
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <div class="texto-sutil">Paciente</div>
+                    <div id="pacienteNombre" class="fw-bold text-dark"></div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">Edad</div>
+                    <div id="pacienteEdad" class="fw-bold text-dark"></div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">Documento</div>
+                    <div id="pacienteCedula" class="fw-bold text-dark"></div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">Dirección</div>
+                    <div id="pacienteDireccion" class="fw-bold text-dark"></div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">EPS</div>
+                    <div id="pacienteEPS" class="fw-bold text-dark"></div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">Estado</div>
+                    <div id="estadoPaciente" class="fw-bold text-dark"></div>
+                  </div>
+                </div>
+                <!-- Datos de la consulta -->
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <div class="texto-sutil">Terapeuta</div>
+                    <div id="terapeutaNombre" class="fw-bold text-dark"></div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">Fecha y Hora</div>
+                    <div id="fechaConsulta" class="fw-bold text-dark"></div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">Duración</div>
+                    <div id="duracionConsulta" class="fw-bold text-dark">1 hora</div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="texto-sutil">Tipo de Atención</div>
+                    <div id="tipoAtencion" class="fw-bold text-dark"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-center align-items-center mt-4 btn-pdf">
+            <button class="btn btn-success btn-guardar" onclick="generarPDF()">
+              <i class="bi bi-file-text me-2"></i>Generar PDF
+            </button>
+          </div>
+        </div> 
+
+        <div class="mt-4 texto-sutil text-center">
+          <div class="mb-2">Documento generado electrónicamente</div>
+          <div id="fechaGeneracion"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="./Backend/reportes.js"></script>
+</body>
+</html>

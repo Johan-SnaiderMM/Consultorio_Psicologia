@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Pacientes | Consultorio Psicológico</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="icon" type="image/png" href="./assets/New.png" />
+    <link rel="stylesheet" href="./Frontend/ingresar_pacientes.css" />
+  </head>
+  <body>
+    <!-- Spinner de carga -->
+    <div id="loadingSpinner" role="alert" aria-live="assertive">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+    </div>
+
+    <!-- Barra de navegación -->
+    <nav
+      class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mi-navbar"
+    >
+      <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center">
+          <img
+            src="./assets/unnamed.png"
+            alt="Logo Consultorio Psicológico"
+            class="me-2"
+          />
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto me-0">
+            <li class="nav-item">
+              <a class="nav-link active" href="./Lista_de_espera.html">
+                <i class="bi bi-list-task me-1"></i>Lista de Espera
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="./reportes.html">
+                <i class="bi bi-file-text me-1"></i>Reportes
+              </a>
+            </li>
+            <li class="nav-item admin-only">
+              <a class="nav-link" href="./ingresar_pacientes.html">
+                <i class="bi bi-person-plus me-1"></i>Nuevo Paciente
+              </a>
+            </li>
+            <li class="nav-item admin-only">
+              <a class="nav-link" href="./ingresar_terapeuta.html">
+                <i class="bi bi-briefcase me-1"></i>Nuevo Terapeuta
+              </a>
+            </li>
+            <li class="nav-item admin-only">
+              <a class="nav-link" href="./nuevoAdministador.html">
+                <i class="bi bi-briefcase me-1"></i>Nuevo Administador
+              </a>
+            </li>
+          </ul>
+        </div>
+        <button class="btn btn-danger ms-3 btn-cerrar" onclick="cerrarSesion()">
+          <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+        </button>
+      </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+      <div class="container">
+        <div class="formulario-contenedor">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+              <i class="bi bi-person-plus me-2"></i>Registro de Paciente
+            </h2>
+            <a
+              href="./Lista_de_espera.html"
+              class="btn btn-outline-secondary btn-volver"
+            >
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+          </div>
+
+          <div class="card shadow floating-form">
+            <div class="card-header bg-primary text-white">
+              <h3 class="mb-0">
+                <i class="bi bi-person-add me-2"></i>Nuevo Paciente
+              </h3>
+            </div>
+            <div class="card-body">
+              <div id="message-container"></div>
+
+              <form id="registroForm" novalidate>
+                <div class="row g-3">
+                  <!-- Columna Izquierda -->
+                  <div class="col-md-6">
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Nombre*</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="nombre"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Apellido*</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="apellido"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Documento*</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="cedula"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Edad*</label>
+                      <input
+                        type="number"
+                        class="form-control"
+                        name="edad"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Columna Derecha -->
+                  <div class="col-md-6">
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Correo Electrónico*</label>
+                      <input
+                        type="email"
+                        class="form-control"
+                        name="correo"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Tipo de Atención*</label>
+                      <select class="form-select" name="tipo_atencion" required>
+                        <option value="Individual">Individual</option>
+                        <option value="Pareja">Pareja</option>
+                        <option value="Familiar">Familiar</option>
+                      </select>
+                    </div>
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Terapeuta*</label>
+                      <select
+                        class="form-select"
+                        name="terapeuta_id"
+                        id="terapeutasDropdown"
+                        required
+                      >
+                        <option value="">Cargando terapeutas...</option>
+                      </select>
+                    </div>
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">Dirección*</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="direccion"
+                        required
+                      />
+                    </div>
+                    <div class="mb-3 campo-formulario">
+                      <label class="form-label">EPS*</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        name="eps"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div class="col-12 text-end">
+                    <button
+                      type="reset"
+                      class="btn btn-secondary me-2 btn-limpiar"
+                    >
+                      <i class="bi bi-eraser"></i> Limpiar
+                    </button>
+                    <button type="submit" class="btn btn-primary px-4">
+                      <i class="bi bi-save"></i> Registrar Paciente
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript personalizado -->
+    <script src="./Backend/ingresar_pacientes.js"></script>
+  </body>
+</html>

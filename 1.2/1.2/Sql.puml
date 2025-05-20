@@ -1,0 +1,78 @@
+@startuml cosultorio
+
+entity "Usuarios" as Usuarios {
+    +id : SERIAL [PK]
+    --
+    email : VARCHAR(255) [UNIQUE, NOT NULL]
+    rol : VARCHAR(20) [NOT NULL]
+    fecha_creacion : TIMESTAMP [DEFAULT CURRENT_TIMESTAMP]
+}
+
+entity "Terapeutas" as Terapeutas {
+    +id_terapeuta : SERIAL [PK]
+    --
+    nombre : VARCHAR(50) [NOT NULL]
+    apellido : VARCHAR(50) [NOT NULL]
+    correo : VARCHAR(100) [UNIQUE, NOT NULL]
+    especialidad : VARCHAR(100)
+    estado : estado_usuario [DEFAULT 'activo']
+    creado_en : TIMESTAMPTZ [DEFAULT CURRENT_TIMESTAMP]
+    usuario_id : INT [UNIQUE, FK Usuarios.id]
+}
+
+entity "Pacientes" as Pacientes {
+    +id_paciente : SERIAL [PK]
+    --
+    nombre : VARCHAR(50) [NOT NULL]
+    apellido : VARCHAR(50) [NOT NULL]
+    cedula : VARCHAR(20) [UNIQUE, NOT NULL]
+    correo : VARCHAR(100) [UNIQUE, NOT NULL]
+    tipo_atencion : VARCHAR(50) [NOT NULL]
+    estado : estado_paciente_type [DEFAULT 'activo']
+    terapeuta_id : INT [FK Terapeutas.id_terapeuta]
+    creado_en : TIMESTAMPTZ [DEFAULT CURRENT_TIMESTAMP]
+}
+
+entity "Citas" as Citas {
+    +id_cita : SERIAL [PK]
+    --
+    paciente_id : INT [FK Pacientes.id_paciente, NOT NULL]
+    terapeuta_id : INT [FK Terapeutas.id_terapeuta, NOT NULL]
+    fecha_hora : TIMESTAMPTZ [NOT NULL]
+    duracion : INTERVAL [DEFAULT '1 hour']
+    estado : estado_cita_type [DEFAULT 'programada']
+    rango_horario : TSTZRANGE
+    observaciones : TEXT
+    creado_en : TIMESTAMPTZ [DEFAULT CURRENT_TIMESTAMP]
+    tipo_atencion : VARCHAR(50)
+}
+
+entity "ListaEspera" as ListaEspera {
+    +id_lista : SERIAL [PK]
+    --
+    paciente_id : INT [FK Pacientes.id_paciente, NOT NULL]
+    terapeuta_id : INT [FK Terapeutas.id_terapeuta, NOT NULL]
+    fecha_solicitud : TIMESTAMPTZ [DEFAULT CURRENT_TIMESTAMP]
+    prioridad : prioridad_type [DEFAULT 'media']
+    estado : estado_lista_type [DEFAULT 'pendiente']
+    observaciones : TEXT
+    creado_en : TIMESTAMPTZ [DEFAULT CURRENT_TIMESTAMP]
+}
+
+entity "Reportes" as Reportes {
+    +id_reporte : SERIAL [PK]
+    --
+    cita_id : INT [FK Citas.id_cita]
+    contenido : TEXT [NOT NULL]
+    creado_en : TIMESTAMPTZ [DEFAULT CURRENT_TIMESTAMP]
+}
+
+Usuarios ||--o{ Terapeutas : "Vincula"
+Terapeutas ||--o{ Pacientes : "Asigna"
+Terapeutas ||--o{ Citas : "Agenda"
+Pacientes ||--o{ Citas : "Tiene"
+Pacientes ||--o{ ListaEspera : "En"
+Terapeutas ||--o{ ListaEspera : "Atiende"
+Citas ||--o{ Reportes : "Genera"
+
+@enduml

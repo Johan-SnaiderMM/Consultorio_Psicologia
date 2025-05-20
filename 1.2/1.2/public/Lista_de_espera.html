@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lista de Espera - Consultorio Psicológico</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <!-- Bootstrap Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+  />
+  <link rel="icon" type="image/png" href="./assets/lista.png" />
+  <!-- Estilos personalizados -->
+  <link rel="stylesheet" href="./Frontend/Lista_de_espera.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark mi-navbar shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center">
+        <img src="./assets/unnamed.png" alt="Logo Consultorio Psicológico" class="me-2" />
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto me-0">
+          <li class="nav-item">
+            <a class="nav-link active" href="./Lista_de_espera.html">
+              <i class="bi bi-list-task me-1"></i>Lista de Espera
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./reportes.html">
+              <i class="bi bi-file-text me-1"></i>Reportes
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./ingresar_pacientes.html">
+              <i class="bi bi-person-plus me-1"></i>Nuevo Paciente
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./ingresar_terapeuta.html">
+              <i class="bi bi-briefcase me-1"></i>Nuevo Terapeuta
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./nuevoAdministador.html">
+              <i class="bi bi-briefcase me-1"></i>Nuevo Administador
+            </a>
+          </li>
+        </ul>
+      </div>
+      <button class="btn btn-danger btn-cerrar-sesion" onclick="cerrarSesion()">
+        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+      </button>
+    </div>
+  </nav>
+
+  <!-- Contenido principal -->
+  <main class="main-content py-4">
+    <div class="container main-container p-4">
+      <!-- Título y búsqueda -->
+      <div
+        class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4"
+      >
+        <h1 class="text-primary fw-bold mb-3 mb-md-0 letras">Lista de Espera</h1>
+        <div class="input-group" style="max-width: 300px">
+          <span class="input-group-text" id="search-icon">
+            <i class="bi bi-search"></i>
+          </span>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar..."
+            aria-label="Buscar"
+            onkeyup="filtrarLista(this.value)"
+          />
+        </div>
+      </div>
+      <!-- Spinner -->
+      <div id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+      <!-- Lista de espera -->
+      <section class="row" id="listaEspera"></section>
+    </div>
+  </main>
+
+  <!-- Modal para Agendar Cita -->
+  <div
+    class="modal fade"
+    id="citasModal"
+    tabindex="-1"
+    aria-labelledby="citasModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="citasModalLabel">Agendar Nueva Cita</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <div id="mensajeErrorCita" class="alert alert-danger d-none" role="alert"></div>
+          <div class="mb-3">
+            <label for="selectTerapeuta" class="form-label">Terapeuta:</label>
+            <select id="selectTerapeuta" class="form-select"></select>
+          </div>
+          <div class="mb-3">
+            <label for="fechaCita" class="form-label">Fecha y Hora:</label>
+            <input
+              type="datetime-local"
+              id="fechaCita"
+              class="form-control"
+            />
+          </div>
+          <button class="btn btn-primary w-100 btn-agregar-cita" onclick="agregarCita()">
+            <i class="bi bi-plus-lg me-2"></i> Agregar Cita
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ficha del Paciente -->
+  <div
+    class="modal fade"
+    id="modalFichaPaciente"
+    tabindex="-1"
+    aria-labelledby="modalFichaPacienteLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalFichaPacienteLabel">Ficha del Paciente</h5>
+          <button
+            type="button"
+            id="editPacienteBtn"
+            class="btn btn-sm  btn-editar"
+          >
+            <i class="bi bi-pencil"></i> Editar
+          </button>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Nombre:</strong> <span id="fichaPacienteNombre"></span></p>
+          <p><strong>Apellido:</strong> <span id="fichaPacienteApellido"></span></p>
+          <p><strong>Cédula:</strong> <span id="fichaPacienteCedula"></span></p>
+          <p><strong>Correo:</strong> <span id="fichaPacienteCorreo"></span></p>
+          <p><strong>Tipo de Atención:</strong> <span id="fichaPacienteAtencion"></span></p>
+          <p><strong>Edad:</strong> <span id="fichaPacienteEdad"></span></p>
+          <p><strong>Dirección:</strong> <span id="fichaPacienteDireccion"></span></p>
+          <p><strong>EPS:</strong> <span id="fichaPacienteEps"></span></p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            id="cancelPacienteBtn"
+            class="btn btn-danger d-none btn-cancelar"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            id="savePacienteBtn"
+            class="btn btn-primary d-none btn-guardar"
+          >
+            Guardar
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary btn-cerrar"
+            data-bs-dismiss="modal"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ficha del Terapeuta -->
+  <div
+    class="modal fade"
+    id="modalFichaTerapeuta"
+    tabindex="-1"
+    aria-labelledby="modalFichaTerapeutaLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalFichaTerapeutaLabel">Ficha del Terapeuta</h5>
+          <button
+            type="button"
+            id="editTerapeutaBtn"
+            class="btn btn-sm btn-outline-primary btn-editar"
+          >
+            <i class="bi bi-pencil"></i> Editar
+          </button>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Nombre:</strong> <span id="fichaTerapeutaNombre"></span></p>
+          <p><strong>Apellido:</strong> <span id="fichaTerapeutaApellido"></span></p>
+          <p><strong>Correo:</strong> <span id="fichaTerapeutaCorreo"></span></p>
+          <p><strong>Especialidad:</strong> <span id="fichaTerapeutaEspecialidad"></span></p>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            id="cancelTerapeutaBtn"
+            class="btn btn-danger d-none btn-cancelar"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            id="saveTerapeutaBtn"
+            class="btn btn-primary d-none btn-guardar"
+          >
+            Guardar
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary btn-cerrar"
+            data-bs-dismiss="modal"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow">
+      <div class="modal-header border-0 bg-danger text-white rounded-top-4">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i> Atención
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body py-4">
+        <p id="confirmMessage" class="mb-0">
+          <!-- Aquí irá el mensaje dinámico -->
+        </p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button"
+                class="btn btn-secondary px-4 rounded-pill"
+                data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button type="button"
+                id="confirmOk"
+                class="btn btn-danger px-4 rounded-pill">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal de alerta -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow">
+      <div class="modal-header border-0 bg-success text-white rounded-top-4">
+        <h5 class="modal-title">
+          <i class="bi bi-check-circle-fill me-2"></i>Éxito
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body py-4">
+        <p id="alertMessage" class="mb-0"></p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button"
+                class="btn btn-success px-4 rounded-pill"
+                data-bs-dismiss="modal">
+          Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="./Backend/Lista_de_espera.js"></script>
+</body>
+</html>

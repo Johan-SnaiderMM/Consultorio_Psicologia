@@ -1,0 +1,254 @@
+	-- (1) Eliminar la BD si existe
+	DROP DATABASE IF EXISTS DBconsultoriopsi;
+	
+	-- (2) Crear la BD
+	CREATE DATABASE DBconsultoriopsi;
+	
+	------------------------------------------------------------------------
+	-- 1. ELIMINAR TABLAS Y TIPOS (si ya existen)
+	------------------------------------------------------------------------
+	DROP TABLE IF EXISTS Reportes CASCADE;
+	DROP TABLE IF EXISTS ListaEspera CASCADE;
+	DROP TABLE IF EXISTS Citas CASCADE;
+	DROP TABLE IF EXISTS Pacientes CASCADE;
+	DROP TABLE IF EXISTS Terapeutas CASCADE;
+	DROP TABLE IF EXISTS Usuarios CASCADE;
+	
+	DROP TYPE IF EXISTS estado_usuario CASCADE;
+	DROP TYPE IF EXISTS estado_cita_type CASCADE;
+	DROP TYPE IF EXISTS estado_lista_type CASCADE;
+	DROP TYPE IF EXISTS estado_paciente_type CASCADE; 
+
+
+	------------------------------------------------------------------------
+	-- 2. CREAR TIPOS ENUM
+	------------------------------------------------------------------------
+	CREATE TYPE estado_usuario AS ENUM ('activo', 'inactivo');
+	CREATE TYPE estado_cita_type AS ENUM ('pendiente','programada','en curso','completada','cancelada');
+	CREATE TYPE estado_lista_type AS ENUM ('pendiente', 'en progreso', 'finalizado');
+	CREATE TYPE estado_paciente_type AS ENUM ('activo', 'intermitente','pausa', 'desertado');
+	
+	------------------------------------------------------------------------
+	-- 3. HABILITAR EXTENSIÓN NECESARIA
+	------------------------------------------------------------------------
+	CREATE EXTENSION IF NOT EXISTS btree_gist;
+	
+	------------------------------------------------------------------------
+	-- 4. TABLA TERAPEUTAS
+	------------------------------------------------------------------------
+	CREATE TABLE Terapeutas (
+	    id_terapeuta SERIAL PRIMARY KEY,
+	    nombre VARCHAR(50) NOT NULL,
+	    apellido VARCHAR(50) NOT NULL,
+	    correo VARCHAR(100) UNIQUE NOT NULL,
+	    especialidad VARCHAR(100),
+	    estado estado_usuario DEFAULT 'activo',
+	    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);
+	select * from Terapeutas;
+	delete from terapeutas ;
+	------------------------------------------------------------------------
+	-- 5. TABLA PACIENTES (usa ENUM en "estado")
+	------------------------------------------------------------------------
+	CREATE TABLE Pacientes (
+	    id_paciente SERIAL PRIMARY KEY,
+	    nombre VARCHAR(50) NOT NULL,
+	    apellido VARCHAR(50) NOT NULL,
+	    cedula VARCHAR(20) UNIQUE NOT NULL,
+	    correo VARCHAR(100) UNIQUE NOT NULL,
+	    tipo_atencion VARCHAR(50) NOT NULL,
+	    edad int not null,
+	    eps varchar(50) not null,
+	    direccion varchar(50) not null,
+	    estado_paciente estado_paciente_type DEFAULT 'activo',
+	    terapeuta_id INT REFERENCES Terapeutas(id_terapeuta),
+	    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);
+	select * from Pacientes;
+	delete from Pacientes;
+	select * from pacientes p where p.estado_paciente not in ('activo')
+	;
+	------------------------------------------------------------------------
+	-- 6. TABLA USUARIOS
+	------------------------------------------------------------------------
+CREATE TABLE Usuarios (
+  id_usuario SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT null,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  rol VARCHAR(20) NOT NULL CHECK (rol IN ('admin', 'terapeuta')),
+  fecha_creacion TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+	select * from Usuarios; 
+	-- Vincular Terapeuta con Usuario (opcional)
+	ALTER TABLE Terapeutas
+	    ADD COLUMN usuario_id INT UNIQUE,
+	    ADD CONSTRAINT fk_terapeuta_usuario
+	        FOREIGN KEY (usuario_id) REFERENCES Usuarios(id_usuario);
+
+	------------------------------------------------------------------------
+	-- 7. TABLA CITAS
+	------------------------------------------------------------------------
+	CREATE TABLE Citas (
+	    id_cita SERIAL PRIMARY KEY,
+	    paciente_id INT NOT NULL REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
+	    terapeuta_id INT NOT NULL REFERENCES Terapeutas(id_terapeuta) ON DELETE CASCADE,
+	    fecha_hora TIMESTAMPTZ NOT NULL,
+	    duracion INTERVAL DEFAULT '1 hour',
+	    estado estado_cita_type DEFAULT 'programada',
+	    rango_horario TSTZRANGE,
+	    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	    tipo_atencion VARCHAR(50) 
+	);
+	
+	------------------------------------------------------------------------
+	-- 8. TABLA LISTA DE ESPERA
+	------------------------------------------------------------------------
+	CREATE TABLE ListaEspera (
+	    id_lista SERIAL PRIMARY KEY,
+	    paciente_id INT NOT NULL REFERENCES Pacientes(id_paciente) ON DELETE CASCADE,
+	    terapeuta_id INT NOT NULL REFERENCES Terapeutas(id_terapeuta) ON DELETE CASCADE,
+	    fecha_solicitud TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+	    estado estado_lista_type DEFAULT 'pendiente',
+	    estado_paciente estado_paciente_type,
+	    creado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);
+	select * from ListaEspera;
+	delete from listaEspera; 
+	------------------------------------------------------------------------
+	-- 9. TABLA REPORTES
+	------------------------------------------------------------------------
+	CREATE TABLE Reportes (
+	  id_reporte SERIAL PRIMARY KEY,
+	  cita_id INTEGER REFERENCES Citas(id_cita) ON DELETE CASCADE,
+	  contenido TEXT NOT NULL,
+	  creado_en TIMESTAMP DEFAULT NOW()
+	);
+	
+	select * from Reportes;
+	
+	INSERT INTO Usuarios (nombre, email, rol)
+	VALUES ('Johan','johan.morenomu@amigo.edu.co', 'admin')
+	ON CONFLICT (email) DO NOTHING;
+	------------------------------------------------------------------------
+	-- 10. FUNCIONES Y TRIGGERS
+	------------------------------------------------------------------------
+	
+	-- Función para actualizar rango_horario
+	CREATE OR REPLACE FUNCTION actualizar_rango_horario()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.rango_horario := tstzrange(
+    NEW.fecha_hora,
+    NEW.fecha_hora + NEW.duracion::INTERVAL,
+    '[)'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_actualizar_rango_horario
+BEFORE INSERT OR UPDATE ON Citas
+FOR EACH ROW EXECUTE FUNCTION actualizar_rango_horario();
+
+-- 1) Función para validar solapamiento y espacio mínimo de 1 hora
+CREATE OR REPLACE FUNCTION validar_espacio_citas()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Busco cualquier cita del mismo terapeuta cuyo rango se cruce
+  -- con el nuevo rango ampliado en 1 hora antes y después
+  IF EXISTS (
+    SELECT 1 FROM Citas
+    WHERE terapeuta_id = NEW.terapeuta_id
+      -- Extender rango: inicio - 1h, fin + 1h
+      AND tstzrange(
+            NEW.fecha_hora - INTERVAL '1 hour',
+            NEW.fecha_hora + COALESCE(NEW.duracion, INTERVAL '1 hour') + INTERVAL '1 hour',
+            '[)'
+          )
+          && rango_horario
+  ) THEN
+    RAISE EXCEPTION 'El terapeuta ya tiene una cita cerca de esta hora; debe haber al menos 1 hora de separación';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2) Trigger que ejecuta la función antes de INSERT y UPDATE
+CREATE TRIGGER trigger_validar_espacio_citas
+BEFORE INSERT OR UPDATE ON Citas
+FOR EACH ROW EXECUTE FUNCTION validar_espacio_citas();
+
+	
+	-- Función para actualizar la Lista de Espera
+	CREATE OR REPLACE FUNCTION actualizar_lista_espera()
+	RETURNS TRIGGER AS $$
+	BEGIN
+	  UPDATE ListaEspera
+	  SET estado = 'en progreso'
+	  WHERE paciente_id = NEW.paciente_id
+	    AND estado != 'en progreso'; -- Evitar actualizaciones innecesarias
+	  
+	  RETURN NEW;
+	END;
+	$$ LANGUAGE plpgsql;
+	
+	CREATE OR REPLACE FUNCTION validar_limite_semanal_citas()
+RETURNS TRIGGER AS $$
+DECLARE
+  cant INTEGER;
+  inicio_semana TIMESTAMPTZ;
+  fin_semana TIMESTAMPTZ;
+BEGIN
+  -- Definir el inicio y fin de la semana de la fecha de la nueva cita
+  inicio_semana := date_trunc('week', NEW.fecha_hora);
+  fin_semana := inicio_semana + interval '1 week';
+
+  -- Contar cuántas citas tiene el terapeuta en la semana en curso
+  SELECT COUNT(*) INTO cant
+  FROM Citas
+  WHERE terapeuta_id = NEW.terapeuta_id
+    AND fecha_hora >= inicio_semana
+    AND fecha_hora < fin_semana;
+
+  IF cant >= 2 THEN
+    RAISE EXCEPTION 'El terapeuta ha alcanzado el límite semanal de 2 citas';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_validar_limite_semanal_citas
+BEFORE INSERT ON Citas
+FOR EACH ROW EXECUTE FUNCTION validar_limite_semanal_citas();
+
+	-- Trigger para actualizar lista de espera al insertar Cita
+	CREATE TRIGGER trigger_actualizar_lista_espera
+	AFTER INSERT ON Citas
+	FOR EACH ROW EXECUTE FUNCTION actualizar_lista_espera();
+	
+	------------------------------------------------------------------------
+	-- 11. RESTRICCIONES (EXCLUDE) PARA EVITAR SOLAPAMIENTO DE CITAS
+	------------------------------------------------------------------------
+	ALTER TABLE Citas ADD CONSTRAINT no_solapamiento_citas
+EXCLUDE USING gist (
+  terapeuta_id WITH =,
+  rango_horario WITH &&
+);
+
+	
+	------------------------------------------------------------------------
+	-- 12. ÍNDICES
+	------------------------------------------------------------------------
+	CREATE INDEX idx_citas_paciente ON Citas(paciente_id);
+	CREATE INDEX idx_citas_terapeuta ON Citas(terapeuta_id);
+	CREATE INDEX idx_citas_terapeuta_fecha ON Citas(terapeuta_id, fecha_hora);
+	CREATE INDEX idx_terapeutas_estado ON Terapeutas(estado);
+	CREATE INDEX idx_lista_espera_estado ON ListaEspera(estado);
+	CREATE INDEX idx_lista_espera_pac_ter ON ListaEspera(paciente_id, terapeuta_id);
+
+	
+	------------------------------------------------------------------------
+	-- FIN DEL SCRIPT
+	------------------------------------------------------------------------

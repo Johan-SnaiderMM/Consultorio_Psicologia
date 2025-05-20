@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de Terapeutas | Consultorio Psicológico</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <!-- Bootstrap Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+  />
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="./assets/New.png" />
+  <!-- CSS Personalizado -->
+  <link rel="stylesheet" href="./Frontend/ingresar_terapeuta.css" />
+</head>
+<body>
+  <!-- Spinner de carga -->
+  <div
+    id="loadingSpinner"
+    class="d-none position-fixed top-50 start-50 translate-middle"
+    role="alert"
+    aria-live="assertive"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Barra de navegación -->
+  <nav
+    class="navbar navbar-expand-lg navbar-dark navbar-maestra mi-navbar shadow-sm"
+    role="navigation"
+  >
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center">
+        <img
+          src="./assets/unnamed.png"
+          alt="Logo Consultorio Psicológico"
+          class="d-inline-block align-text-top me-2"
+          height="30"
+        />
+        <!-- Si quieres poner texto junto al logo, descomenta:
+        <span class="text-white fw-bold">Consultorio Psicológico</span>
+        -->
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto me-0">
+          <li class="nav-item">
+            <a class="nav-link" href="./Lista_de_espera.html">
+              <i class="bi bi-list-task me-1"></i>Lista de Espera
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="./reportes.html">
+              <i class="bi bi-file-text me-1"></i>Reportes
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./ingresar_pacientes.html">
+              <i class="bi bi-person-plus me-1"></i>Nuevo Paciente
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a
+              class="nav-link active"
+              aria-current="page"
+              href="./ingresar_terapeuta.html"
+            >
+              <i class="bi bi-briefcase me-1"></i>Nuevo Terapeuta
+            </a>
+          </li>
+          <li class="nav-item admin-only">
+            <a class="nav-link" href="./nuevoAdministador.html">
+              <i class="bi bi-person-plus me-1"></i>Nuevo Administrador
+            </a>
+          </li>
+        </ul>
+        <button
+          class="btn btn-danger ms-3 btn-cerrar"
+          onclick="cerrarSesion()"
+          aria-label="Cerrar sesión"
+        >
+          <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenido principal -->
+  <main class="main-content py-4">
+    <div class="container">
+      <!-- Formulario de registro -->
+      <div class="formulario-contenedor">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="mb-0">
+            <i class="bi bi-briefcase me-2"></i>Registro de Terapeutas
+          </h2>
+          <a href="./Lista_de_espera.html" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+          </a>
+        </div>
+        <div class="card shadow floating-form">
+          <div class="card-header bg-success text-white banner-one">
+            <h3 class="mb-0">
+              <i class="bi bi-person-plus me-2"></i>Nuevo Terapeuta
+            </h3>
+          </div>
+          <div class="card-body">
+            <div id="message-container"></div>
+            <form id="registroTerapeutaForm" novalidate>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="mb-3 campo-formulario">
+                    <label for="nombre" class="form-label">Nombre*</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="nombre"
+                      name="nombre"
+                      required
+                    />
+                    <div class="invalid-feedback">
+                      Por favor ingrese el nombre
+                    </div>
+                  </div>
+                  <div class="mb-3 campo-formulario">
+                    <label for="apellido" class="form-label">Apellido*</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="apellido"
+                      name="apellido"
+                      required
+                    />
+                    <div class="invalid-feedback">
+                      Por favor ingrese el apellido
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3 campo-formulario">
+                    <label for="correo" class="form-label"
+                      >Correo Electrónico*</label
+                    >
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="correo"
+                      name="correo"
+                      required
+                    />
+                    <div class="invalid-feedback">
+                      Por favor ingrese un correo válido
+                    </div>
+                  </div>
+                  <div class="mb-3 campo-formulario">
+                    <label for="especialidad" class="form-label"
+                      >Especialidad*</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="especialidad"
+                      name="especialidad"
+                      required
+                    />
+                    <div class="invalid-feedback">
+                      Por favor ingrese la especialidad
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12 text-end">
+                  <button
+                    type="reset"
+                    class="btn btn-secondary me-2 btn-limpiar"
+                  >
+                    <i class="bi bi-eraser"></i> Limpiar
+                  </button>
+                  <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-save"></i> Registrar Terapeuta
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- LISTA DE TERAPEUTAS -->
+      <div class="mt-5">
+        <h3 class="mb-3"><i class="bi bi-list-task me-2"></i>Lista de Terapeutas</h3>
+        <div
+          id="terapeutaListMessage"
+          class="alert d-none"
+          role="alert"
+        ></div>
+        <table id="terapeutas-table" class="table table-hover">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Correo</th>
+              <th>Especialidad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal de confirmación -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 shadow">
+        <div class="modal-header border-0 bg-danger text-white rounded-top-4">
+          <h5 class="modal-title">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Atención
+          </h5>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+          ></button>
+        </div>
+        <div class="modal-body py-4">
+          <p id="confirmMessage" class="mb-0"></p>
+        </div>
+        <div class="modal-footer border-0">
+          <button
+            type="button"
+            class="btn btn-secondary px-4 rounded-pill"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            id="confirmOk"
+            class="btn btn-danger px-4 rounded-pill"
+          >
+            Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    defer
+  ></script>
+  <script src="./Backend/ingresar_terapeuta.js" defer></script>
+</body>
+</html>
