@@ -171,21 +171,26 @@
 
                   <!-- Columna Derecha -->
                   <div class="col-md-6">
-                    <!-- Rol -->
-                    <div class="mb-3 campo-formulario">
-                      <label class="form-label">Rol*</label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="rol"
-                        name="rol"
-                        required
-                      />
-                      <div class="invalid-feedback">
-                        Por favor ingrese el rol del administrador
-                      </div>
-                    </div>
-                  </div>
+                  <!-- Rol fijo -->
+                  <div class="mb-3 campo-formulario">
+                    <label class="form-label">Rol*</label>
+                    <!-- Muestra “admin” pero no deja cambiarlo -->
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="rolDisplay"
+                    value="admin"
+                    disabled
+                  />
+                  <!-- Campo oculto que realmente envía “admin” al backend -->
+                  <input
+                    type="hidden"
+                    id="rol"
+                    name="rol"
+                    value="admin"
+                  />
+                </div>
+
 
                   <!-- Botones -->
                   <div class="col-12 text-end">

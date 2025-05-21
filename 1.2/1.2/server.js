@@ -388,6 +388,23 @@ app.patch("/api/terapeutas/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/terapeutas/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      "DELETE FROM Terapeutas WHERE id_terapeuta = $1 RETURNING *",
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Terapeuta no encontrado" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error al eliminar terapeuta:", err);
+    res.status(500).json({ error: "Error al eliminar terapeuta" });
+  }
+});
+
 // Modificación en PATCH de paciente: impedir cambios si el paciente ya está "completado"
 app.patch("/api/pacientes/:id", async (req, res) => {
   const {
