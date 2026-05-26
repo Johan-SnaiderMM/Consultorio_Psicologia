@@ -13,7 +13,7 @@ const pool = new Pool({
   user: "postgres",
   host: "localhost",
   database: "DBconsultoriopsi",
-  password: "0240",
+  password: "root",
   port: 5432,
   max: 20,
   idleTimeoutMillis: 30000,
@@ -734,39 +734,7 @@ app.patch("/api/citas/:id/completar", async (req, res) => {
   }
 });
 
-// Eliminar una cita sin tocar pacientes ni lista de espera
-app.delete("/api/citas/:id", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "DELETE FROM Citas WHERE id_cita = $1 RETURNING *",
-      [req.params.id]
-    );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Cita no encontrada" });
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error al eliminar cita:", err);
-    res.status(500).json({ error: "Error al eliminar cita" });
-  }
-});
 
-// Borrar un paciente de la lista de espera
-app.delete("/api/lista-espera/:id", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "DELETE FROM ListaEspera WHERE id_lista = $1 RETURNING *",
-      [req.params.id]
-    );
-    if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Paciente no encontrado en lista" });
-    }
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error al eliminar de lista:", err);
-    res.status(500).json({ error: "Error interno al eliminar paciente" });
-  }
-});
 
 app.delete("/api/citas/:id", async (req, res) => {
   const client = await pool.connect();
@@ -997,11 +965,11 @@ app.get("/api/reportes/paciente/:id", async (req, res) => {
         c.fecha_hora, 
         p.id_paciente, p.nombre AS paciente_nombre, p.apellido AS paciente_apellido,
         t.nombre AS terapeuta_nombre, t.apellido AS terapeuta_apellido
-      FROM Reportes r
-      JOIN Citas c ON r.cita_id = c.id_cita
+      FROM Citas c
       JOIN Pacientes p ON c.paciente_id = p.id_paciente
       JOIN Terapeutas t ON c.terapeuta_id = t.id_terapeuta
-      WHERE p.id_paciente = $1
+      LEFT JOIN Reportes r ON r.cita_id = c.id_cita
+      WHERE p.id_paciente = $1 AND c.estado = 'completada'
       ORDER BY c.fecha_hora;
     `,
       [id]

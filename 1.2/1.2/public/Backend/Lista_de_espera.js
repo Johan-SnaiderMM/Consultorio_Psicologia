@@ -215,9 +215,12 @@ function completarCita(idCita) {
             "Authorization": `Bearer ${localStorage.getItem("token")}`
           }
         });
-        if (!res.ok) throw new Error("Error al completar cita");
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || "Error al completar cita");
+        }
         showAlert("Cita completada exitosamente");
-          cargarListaEspera();
+        cargarListaEspera();
       } catch (e) {
         console.error(e);
         alert("Error: " + e.message);
@@ -321,7 +324,7 @@ async function agregarCita() {
         paciente_id: pacienteActual,
         terapeuta_id: terapeutaSelect.value,
         fecha_hora: fechaInput.value,
-        duracion: "1 hour"
+        duracion: 60
       })
     });
     if (!res.ok) {

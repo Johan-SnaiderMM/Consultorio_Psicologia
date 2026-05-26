@@ -88,6 +88,27 @@
         <small class="text-muted mt-2 d-block">Solo se muestran citas marcadas como completadas</small>
       </div>
 
+      <!-- Sección: Generar PDF de todos los reportes de un paciente -->
+      <div class="mb-4 p-3" style="background: rgba(0,123,153,0.05); border-radius: 12px; border: 1px solid rgba(0,123,153,0.15);">
+        <h5 class="fw-bold mb-3" style="color: #007b99;">
+          <i class="bi bi-file-earmark-pdf me-2"></i>Historial completo por paciente
+        </h5>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-8">
+            <label for="selectPacienteHistorial" class="form-label text-muted small">Seleccione un paciente:</label>
+            <select id="selectPacienteHistorial" class="form-select">
+              <option value="">Seleccione un paciente...</option>
+            </select>
+          </div>
+          <div class="col-md-4 d-grid">
+            <button class="btn btn-reportePaciente" onclick="generarPDFPaciente()">
+              <i class="bi bi-download me-1"></i> Generar PDF Historial
+            </button>
+          </div>
+        </div>
+        <small class="text-muted mt-2 d-block">Genera un PDF con todos los reportes de consulta del paciente seleccionado</small>
+      </div>
+
       <!-- Ticket de reporte -->
       <div id="ticketReporte" class="ticket" style="display: none">
         <div class="encabezado mb-4 ">
@@ -153,6 +174,20 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Sección de observaciones y reporte -->
+          <div class="mb-4 p-3 rounded-3" style="background: rgba(0, 123, 153, 0.03); border: 1px solid rgba(0, 123, 153, 0.1);">
+            <h5 class="fw-bold mb-3 text-dark d-flex align-items-center">
+              <i class="bi bi-pencil-square me-2 text-primary"></i> Observaciones y Evolución del Paciente
+            </h5>
+            <textarea id="contenidoReporte" class="form-control border-secondary-subtle rounded-3 shadow-sm mb-3" rows="6" placeholder="Escriba aquí los detalles profesionales de la sesión, evolución y observaciones..."></textarea>
+            <div class="d-flex justify-content-between align-items-center">
+              <span id="editorInfo" class="text-muted small"></span>
+              <button class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm" onclick="guardarReporte()">
+                <i class="bi bi-save me-1"></i> Guardar Observaciones
+              </button>
             </div>
           </div>
 
