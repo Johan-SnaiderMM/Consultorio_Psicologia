@@ -427,7 +427,7 @@ async function cambiarEstadoPaciente(pacienteId, nuevoEstado) {
     var trigger = event.relatedTarget;
     var pacienteId = trigger.getAttribute("data-paciente-id");
     try {
-      const response = await fetch(`http://localhost:5001/api/pacientes/${pacienteId}`);
+      const response = await fetch(`/api/pacientes/${pacienteId}`);
       if (!response.ok)
         throw new Error("Error al obtener la ficha del paciente");
       const paciente = await response.json();
@@ -463,7 +463,7 @@ async function cambiarEstadoPaciente(pacienteId, nuevoEstado) {
   
     try {
       const response = await fetch(
-        `http://localhost:5001/api/pacientes/${originalPaciente.id_paciente}`,
+        `/api/pacientes/${originalPaciente.id_paciente}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -543,7 +543,7 @@ async function cambiarEstadoPaciente(pacienteId, nuevoEstado) {
     var terapeutaId = trigger.getAttribute("data-terapeuta-id");
     try {
       const response = await fetch(
-        `http://localhost:5001/api/terapeutas/${terapeutaId}`
+        `/api/terapeutas/${terapeutaId}`
       );
       if (!response.ok)
         throw new Error("Error al obtener la ficha del terapeuta");
@@ -623,7 +623,7 @@ async function cambiarEstadoPaciente(pacienteId, nuevoEstado) {
       };
       try {
         const response = await fetch(
-          `http://localhost:5001/api/terapeutas/${originalTerapeuta.id_terapeuta}`,
+          `/api/terapeutas/${originalTerapeuta.id_terapeuta}`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },

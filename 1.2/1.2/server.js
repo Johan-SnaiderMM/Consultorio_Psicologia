@@ -8,17 +8,46 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Modo DEMO (demo en línea): Postgres en memoria con datos ficticios y entrada con un botón, sin Google.
+// Se activa con DEMO=1 o solo (VERCEL) al correr en Vercel. Sin eso, todo funciona como siempre.
+const DEMO = process.env.DEMO === "1" || Boolean(process.env.VERCEL);
+
 // Configuración de la conexión a PostgreSQL
-const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "DBconsultoriopsi",
-  password: "root",
-  port: 5432,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+const pool = DEMO
+  ? require("./demo/db-demo").crearPoolDemo()
+  : new Pool({
+      user: "postgres",
+      host: "localhost",
+      database: "DBconsultoriopsi",
+      password: "root",
+      port: 5432,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+    });
+
+// Le dice al frontend si es la demo (muestra el botón «Probar la demo» y el aviso de datos ficticios).
+app.get("/api/modo", (req, res) => {
+  res.json({ demo: DEMO });
 });
+
+// Entrada de la demo: una cuenta de administración ficticia, sin Google.
+app.post("/api/login-demo", (req, res) => {
+  if (!DEMO) return res.status(404).json({ error: "No disponible" });
+  res.json({ email: "demo@consultorio.test", rol: "admin", name: "Demo" });
+});
+
+// En la demo la base se arma al arrancar: el resto de la API espera a que esté lista.
+if (DEMO) {
+  app.use("/api", async (req, res, next) => {
+    try {
+      await pool.listo;
+      next();
+    } catch (error) {
+      res.status(503).json({ error: "La demo se está iniciando, intenta de nuevo en unos segundos" });
+    }
+  });
+}
 
 // Ruta de prueba de conexión
 app.get("/api/prueba-conexion", async (req, res) => {
@@ -1006,6 +1035,9 @@ app.get("/api/reportes", async (req, res) => {
 // Ruta para login con Google
 
 app.post("/api/login-google", async (req, res) => {
+  if (DEMO) {
+    return res.status(403).json({ error: "En la demo se entra con el botón «Probar la demo»" });
+  }
   try {
     const { tokenId } = req.body;
 
@@ -1051,7 +1083,11 @@ app.post("/api/login-google", async (req, res) => {
 // Servir archivos estáticos
 app.use(express.static("public"));
 
-// Iniciar servidor
-const server = app.listen(5001, () => {
-  console.log("Servidor HTTP en http://localhost:5001");
-});
+// Iniciar servidor (en Vercel no se escucha un puerto: la función exporta la app)
+if (require.main === module) {
+  app.listen(5001, () => {
+    console.log("Servidor HTTP en http://localhost:5001");
+  });
+}
+
+module.exports = app;

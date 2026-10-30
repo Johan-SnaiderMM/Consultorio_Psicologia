@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "{*.sql,demo/**,node_modules/@electric-sql/pglite/dist/**}",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index" }]
+}

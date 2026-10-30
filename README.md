@@ -4,6 +4,14 @@
 
 ---
 
+## 🌐 Demo en línea
+
+**https://consultorio-psicologia-demo.vercel.app**: entra con el botón **Probar la demo** (sin Google). Todos los datos son **ficticios** (terapeutas, pacientes, citas y notas inventados) y se reinician solos.
+
+La demo usa el mismo código, el mismo esquema y los mismos triggers del sistema: un Postgres real en memoria ([PGlite](https://pglite.dev)) reemplaza a la base local (`1.2/1.2/demo/`). Se activa sola en Vercel o con `DEMO=1 node server.js`; sin eso, todo funciona como se describe más abajo.
+
+---
+
 ## 🚀 Tecnologías Utilizadas
 
 El proyecto está construido bajo una arquitectura robusta y moderna sin dependencias excesivas:

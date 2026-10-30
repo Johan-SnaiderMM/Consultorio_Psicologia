@@ -22,12 +22,42 @@ const clearError = () => {
   errorDiv.textContent = '';
 };
 
+// ====== MODO DEMO (demo en línea) ======
+// Si el servidor dice que es la demo, se esconde el ingreso con Google y se muestra «Probar la demo».
+let modoDemo = false;
+const modoListo = fetch('/api/modo')
+  .then(r => (r.ok ? r.json() : { demo: false }))
+  .then(d => { modoDemo = Boolean(d.demo); })
+  .catch(() => {});
+
+const activarModoDemo = () => {
+  document.getElementById('buttonDiv')?.style.setProperty('display', 'none');
+  document.getElementById('demo-entrada')?.style.setProperty('display', 'block');
+};
+
+window.entrarDemo = () => {
+  mostrarSpinner();
+  clearError();
+  fetch('/api/login-demo', { method: 'POST' })
+    .then(r => {
+      if (!r.ok) throw new Error('No se pudo abrir la demo');
+      return r.json();
+    })
+    .then(data => {
+      localStorage.setItem('user', JSON.stringify({ email: data.email, role: data.rol, name: data.name }));
+      localStorage.setItem('usuario', JSON.stringify(data));
+      window.location.href = '/Lista_de_espera.html';
+    })
+    .catch(error => showError(error.message || 'No se pudo abrir la demo'))
+    .finally(() => ocultarSpinner());
+};
+
 // ====== MANEJO DE AUTENTICACIÓN CON GOOGLE ======
 const handleCredentialResponse = (response) => {
   mostrarSpinner();
   clearError();
 
-  fetch('http://localhost:5001/api/login-google', {
+  fetch('/api/login-google', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ tokenId: response.credential })
@@ -124,7 +154,11 @@ const toggleMenuByRole = () => {
 // ====== INICIALIZACIÓN DE LA APLICACIÓN ======
 document.addEventListener('DOMContentLoaded', () => {
   // Cargar Google SDK primero
-  document.addEventListener('google-loaded', initGoogleAuth);
+  document.addEventListener('google-loaded', async () => {
+    await modoListo;
+    if (!modoDemo) initGoogleAuth();
+  });
+  modoListo.then(() => { if (modoDemo) activarModoDemo(); });
 
   // Verificar autenticación mejorada
   verificarAutenticacion();
